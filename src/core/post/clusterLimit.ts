@@ -5,6 +5,9 @@ import type { LoadedPalette } from '../palette/types';
 const GRAY_CHROMA = 8;
 const HUE_GAP = 20;
 const MAX_FAMILY_LAYERS = 3;
+// 偏差记录（docs/11）：docs/03 §9.3 只写"相邻 hue 差 ≤20°"；实现额外约束
+// "同族跨度 ≤60°"，避免一族横跨过大色相范围，确保"黄色系 ≤3 层"可稳定达成。
+const MAX_FAMILY_SPAN = 60;
 
 interface UsedColor {
   index: number;
@@ -68,7 +71,7 @@ function familyOf(colors: UsedColor[], palette: LoadedPalette): number[][] {
       color.C > GRAY_CHROMA &&
       sorted[(start + step - 1 + n) % n].C > GRAY_CHROMA;
     const delta = previous >= 0 ? (color.hue - previous + 360) % 360 : 0;
-    if (canMerge && delta <= HUE_GAP && span + delta <= 60) {
+    if (canMerge && delta <= HUE_GAP && span + delta <= MAX_FAMILY_SPAN) {
       current.push(color.index);
       span += delta;
     } else {
@@ -134,9 +137,9 @@ function representativesForFamily(
   return [...result];
 }
 
-function protectedIndices(used: UsedColor[]): Set<number> {
-  const result = new Set<number>();
-  if (!used.length) return result;
+function protectedIndices(used: UsedColor[]): { set: Set<number>; ordered: number[] } {
+  const set = new Set<number>();
+  if (!used.length) return { set, ordered: [] };
   let dark = used[0];
   let bright = used[0];
   let saturated = used[0];
@@ -145,10 +148,18 @@ function protectedIndices(used: UsedColor[]): Set<number> {
     if (color.L > bright.L) bright = color;
     if (color.C > saturated.C || (color.C === saturated.C && color.index < saturated.index)) saturated = color;
   }
-  result.add(dark.index);
-  result.add(bright.index);
-  result.add(saturated.index);
-  return result;
+  // 重要性递减：暗 > 亮 > 饱和（在 K 过小时按此顺序舍弃）
+  const ordered = [dark.index];
+  set.add(dark.index);
+  if (bright.index !== dark.index) {
+    ordered.push(bright.index);
+    set.add(bright.index);
+  }
+  if (saturated.index !== dark.index && saturated.index !== bright.index) {
+    ordered.push(saturated.index);
+    set.add(saturated.index);
+  }
+  return { set, ordered };
 }
 
 function nearestInSet(lab: [number, number, number], final: Set<number>, palette: LoadedPalette): number {
@@ -164,10 +175,17 @@ function nearestInSet(lab: [number, number, number], final: Set<number>, palette
   return best;
 }
 
-function removeUntilLimit(final: Set<number>, protectedSet: Set<number>, K: number, palette: LoadedPalette): Set<number> {
+function removeUntilLimit(
+  final: Set<number>,
+  protectedSet: Set<number>,
+  protectedOrder: number[],
+  K: number,
+  palette: LoadedPalette
+): Set<number> {
   while (final.size > K) {
     let remove = -1;
     let removeCost = Number.POSITIVE_INFINITY;
+    // 1) 优先删除非保护色（与自身 ΔE2000 最近者，最不伤色彩结构）
     for (const index of final) {
       if (protectedSet.has(index)) continue;
       let cost = Number.POSITIVE_INFINITY;
@@ -179,6 +197,16 @@ function removeUntilLimit(final: Set<number>, protectedSet: Set<number>, K: numb
       if (cost < removeCost || (cost === removeCost && index < remove)) {
         remove = index;
         removeCost = cost;
+      }
+    }
+    // 2) 兜底：K 过小（< 保护色数量）时，按"饱和 → 亮 → 暗"顺序舍弃保护色，保证 ≤K
+    if (remove < 0) {
+      for (let i = protectedOrder.length - 1; i >= 0; i -= 1) {
+        const index = protectedOrder[i];
+        if (final.has(index)) {
+          remove = index;
+          break;
+        }
       }
     }
     if (remove < 0) break;
@@ -238,10 +266,11 @@ export function clusterLimit(pattern: Pattern, palette: LoadedPalette, K: number
     }
   }
 
-  const protectedSet = protect ? protectedIndices(used) : new Set<number>();
+  const protection = protect ? protectedIndices(used) : { set: new Set<number>(), ordered: [] as number[] };
+  const protectedSet = protection.set;
   for (const index of protectedSet) final.add(index);
   final = keepFamilyLayerLimit(final, groups, protectedSet, palette);
-  final = removeUntilLimit(final, protectedSet, K, palette);
+  final = removeUntilLimit(final, protectedSet, protection.ordered, K, palette);
 
   const cells = new Int16Array(pattern.cells.length);
   for (let i = 0; i < pattern.cells.length; i += 1) {

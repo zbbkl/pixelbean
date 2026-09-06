@@ -106,4 +106,32 @@ describe('clusterLimit', () => {
     const second = clusterLimit(fullPattern(allCodes), palette, 4, true);
     expect([...first.cells]).toEqual([...second.cells]);
   });
+
+  it('never exceeds K when dark/bright/saturated protection are three distinct colors (small K)', () => {
+    // 回归：K < 保护色数量时不得违反 ≤K（docs/01 §9 DoD「色数统计 ≤ 设定值」）。
+    const distinct = labPalette([
+      [90, 4, 45],  // 亮（bright）
+      [25, 16, 6],  // 暗（dark）
+      [55, 5, -55]  // 饱和（saturated）
+    ]);
+    const pattern: Pattern = {
+      paletteId: distinct.set.id,
+      width: 3,
+      height: 1,
+      cells: new Int16Array([0, 1, 2]),
+      codes: distinct.codes,
+      options: {
+        paletteId: distinct.set.id,
+        width: 3,
+        height: 1,
+        bg: 'white',
+        mode: 'average',
+        maxColors: null,
+        dither: 'none'
+      }
+    };
+    const result = clusterLimit(pattern, distinct, 2, true);
+    const used = new Set(result.cells.filter((cell) => cell >= 0));
+    expect(used.size).toBeLessThanOrEqual(2);
+  });
 });
