@@ -42,45 +42,44 @@ function usedColors(counts: Map<number, number>, palette: LoadedPalette): UsedCo
   });
 }
 
-function angleDistance(a: number, b: number): number {
-  const raw = Math.abs(a - b) % 360;
-  return Math.min(raw, 360 - raw);
-}
-
 function familyOf(colors: UsedColor[], palette: LoadedPalette): number[][] {
   const sorted = [...colors].sort((a, b) => a.hue - b.hue || a.index - b.index);
   const n = sorted.length;
-  const parent = Array.from({ length: n }, (_, i) => i);
-  const find = (x: number): number => {
-    while (parent[x] !== x) {
-      parent[x] = parent[parent[x]];
-      x = parent[x];
-    }
-    return x;
-  };
-  const union = (a: number, b: number) => {
-    const ra = find(a);
-    const rb = find(b);
-    if (ra !== rb) parent[rb] = ra;
-  };
-
+  if (!n) return [];
+  let start = 0;
+  let largestGap = -1;
   for (let i = 0; i < n; i += 1) {
     const next = (i + 1) % n;
-    const a = sorted[i];
-    const b = sorted[next];
-    if (a.C > GRAY_CHROMA && b.C > GRAY_CHROMA && angleDistance(a.hue, b.hue) <= HUE_GAP) {
-      union(i, next);
+    const gap = (sorted[next].hue - sorted[i].hue + 360) % 360;
+    if (gap > largestGap) {
+      largestGap = gap;
+      start = next;
     }
   }
 
-  const groups = new Map<number, number[]>();
-  for (let i = 0; i < n; i += 1) {
-    const root = find(i);
-    const list = groups.get(root) ?? [];
-    list.push(sorted[i].index);
-    groups.set(root, list);
+  const groups: number[][] = [];
+  let current: number[] = [];
+  let span = 0;
+  let previous = -1;
+  for (let step = 0; step < n; step += 1) {
+    const color = sorted[(start + step) % n];
+    const canMerge =
+      current.length > 0 &&
+      color.C > GRAY_CHROMA &&
+      sorted[(start + step - 1 + n) % n].C > GRAY_CHROMA;
+    const delta = previous >= 0 ? (color.hue - previous + 360) % 360 : 0;
+    if (canMerge && delta <= HUE_GAP && span + delta <= 60) {
+      current.push(color.index);
+      span += delta;
+    } else {
+      if (current.length) groups.push(current);
+      current = [color.index];
+      span = 0;
+    }
+    previous = color.hue;
   }
-  return [...groups.values()];
+  if (current.length) groups.push(current);
+  return groups;
 }
 
 function representativesForFamily(
@@ -188,6 +187,39 @@ function removeUntilLimit(final: Set<number>, protectedSet: Set<number>, K: numb
   return final;
 }
 
+function keepFamilyLayerLimit(
+  final: Set<number>,
+  families: number[][],
+  protectedSet: Set<number>,
+  palette: LoadedPalette
+): Set<number> {
+  for (const family of families) {
+    const members = new Set(family);
+    const present = [...final].filter((index) => members.has(index));
+    while (present.length > MAX_FAMILY_LAYERS) {
+      let remove = -1;
+      let removeCost = Number.POSITIVE_INFINITY;
+      for (const index of present) {
+        if (protectedSet.has(index)) continue;
+        let cost = Number.POSITIVE_INFINITY;
+        for (const other of present) {
+          if (other === index) continue;
+          const delta = ciede2000(labOf(palette, index), labOf(palette, other));
+          if (delta < cost) cost = delta;
+        }
+        if (cost < removeCost || (cost === removeCost && index < remove)) {
+          remove = index;
+          removeCost = cost;
+        }
+      }
+      if (remove < 0) break;
+      final.delete(remove);
+      present.splice(present.indexOf(remove), 1);
+    }
+  }
+  return final;
+}
+
 /**
  * §9.3 智能限色：按色相族聚类、族内 ≤3 层，再做全局压缩到 K；可保护最暗/最亮/最饱和。
  */
@@ -208,6 +240,7 @@ export function clusterLimit(pattern: Pattern, palette: LoadedPalette, K: number
 
   const protectedSet = protect ? protectedIndices(used) : new Set<number>();
   for (const index of protectedSet) final.add(index);
+  final = keepFamilyLayerLimit(final, groups, protectedSet, palette);
   final = removeUntilLimit(final, protectedSet, K, palette);
 
   const cells = new Int16Array(pattern.cells.length);
