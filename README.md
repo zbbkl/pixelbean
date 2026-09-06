@@ -12,7 +12,7 @@
 | 2. 按 spec 实现可运行前端第一版 | Codex | ✅ 已完成 — 见 [`docs/06-阶段2自测报告.md`](docs/06-阶段2自测报告.md)；色表范围 = 仅 MARD-291 |
 | 3. 代码审查 + 修 bug + 优化 + 部署文档 | Claude Code | ✅ 已完成 — 见 [`docs/09-阶段3审查报告.md`](docs/09-阶段3审查报告.md)；部署见 [`docs/08-部署指南.md`](docs/08-部署指南.md) |
 | v1.1 拼豆工艺后处理（A 智能限色 / B 暗部简化 / C 噪点清理 / D 自动描边 / E 目标模式 / F Perler+Hama 色板 / G 底板 116） | Codex → Claude Code 复核 | ✅ 已实现并终审 — 见 [`docs/11-阶段v1.1自测报告.md`](docs/11-阶段v1.1自测报告.md) 与 [`docs/13-阶段v1.1审查报告.md`](docs/13-阶段v1.1审查报告.md)（1 个 P1 已修复） |
-| 移动端适配（四档断点/三段导航/全屏图纸/触控手势） | Codex → Claude Code 复核 | ✅ Codex 已实现 — [`docs/15-移动端适配自测报告.md`](docs/15-移动端适配自测报告.md)；🔵 Claude 终审待跑 — 任务书 [`docs/16`](docs/16-移动端审查任务书-ClaudeCode.md)，产出 docs/17 |
+| 移动端适配（四档断点/三段导航/全屏图纸/触控手势） | Codex → Claude Code 复核 | ✅ 已实现并终审 — 见 [`docs/15-移动端适配自测报告.md`](docs/15-移动端适配自测报告.md) 与 [`docs/17-移动端审查报告.md`](docs/17-移动端审查报告.md)（3 个 P1 已修复） |
 
 **流水线纪律**：阶段 2 的产物必须跑得起来并按 `docs/01` 验收清单自测；阶段 3 必须真的启动项目复现问题，禁止只看代码。
 
@@ -35,6 +35,7 @@
 | [`docs/14-移动端适配规格与任务书-Codex.md`](docs/14-移动端适配规格与任务书-Codex.md) | 移动端四档断点版式、触控目标/手势、微信 webview、验收矩阵 |
 | [`docs/15-移动端适配自测报告.md`](docs/15-移动端适配自测报告.md) | 移动端实现与 Playwright 六视口 PASS/FAIL 截图记录 |
 | [`docs/16-移动端审查任务书-ClaudeCode.md`](docs/16-移动端审查任务书-ClaudeCode.md) | 移动端终审任务书（Claude Code）：手势数学/状态/断点审查、修复与产出约定 |
+| [`docs/17-移动端审查报告.md`](docs/17-移动端审查报告.md) | 移动端终审：四档复现、手势数学/状态/断点审查、3 个 P1 修复、残余风险 |
 | [`docs/11-阶段v1.1自测报告.md`](docs/11-阶段v1.1自测报告.md) | Codex v1.1 实现与 T13–T20/DoD 自测记录 |
 | [`docs/13-阶段v1.1审查报告.md`](docs/13-阶段v1.1审查报告.md) | Claude Code v1.1 终审：环境复现、T13–T20/DoD 复核、算法逐行对照、P0/P1 修复、残余风险 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
