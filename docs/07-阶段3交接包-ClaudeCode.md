@@ -71,7 +71,8 @@
 你是 PixelBean 拼豆图纸生成器的阶段 3 审查者（Claude Code）。
 先完整阅读工作区 README.md 与 docs/00~06（00 许可证红线、01 需求与
 DoD/T1-T12、02 架构签名、03 算法伪代码、04 色表契约、05 纪律、06 阶段2自测报告）。
-工作目录 D:\workspace\PixelBean 已是 git 仓库（main 上 4 个提交，勿改写历史）。
+工作目录 D:\workspace\PixelBean 已是 git 仓库（origin = github.com/zbbkl/pixelbean，
+main 上已有提交，以 `git log --oneline` 为准；**勿改写历史，全部新提交追加**）。
 
 严格按 docs/07 执行：先跑起来（npm test/tsc/build/dev + 真实浏览器零报错），
 逐条复测 docs/01 DoD 与 T1-T12（含 12000×12000 大图遗留项），按 docs/07 §3.3
