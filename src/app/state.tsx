@@ -93,7 +93,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         palettes: { ...state.palettes, [action.palette.id]: action.palette },
         currentPaletteId: action.palette.id,
-        settings: { ...state.settings, paletteId: action.palette.id },
+        settings: { ...state.settings, paletteId: action.palette.id, targetMode: 'custom' },
         pattern: null,
         error: null
       };
@@ -105,7 +105,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         palettes,
         currentPaletteId: fallback,
-        settings: { ...state.settings, paletteId: fallback },
+        settings: { ...state.settings, paletteId: fallback, targetMode: 'custom' },
         pattern: null
       };
     }
@@ -113,7 +113,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         currentPaletteId: action.id,
-        settings: { ...state.settings, paletteId: action.id },
+        settings: { ...state.settings, paletteId: action.id, targetMode: 'custom' },
         pattern: null
       };
     case 'convertStart':

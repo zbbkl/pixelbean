@@ -30,4 +30,11 @@ describe('target-mode custom linkage', () => {
       outline: defaultSettings.outline
     });
   });
+
+  it('marks palette changes as custom through the reducer', () => {
+    const state = initialState({});
+    const next = appReducer(state, { type: 'setPalette', id: 'another-brand' });
+    expect(next.settings.paletteId).toBe('another-brand');
+    expect(next.settings.targetMode).toBe('custom');
+  });
 });
