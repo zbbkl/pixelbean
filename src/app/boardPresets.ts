@@ -7,7 +7,8 @@ export interface BoardPreset {
 export const boardPresets: BoardPreset[] = [
   { id: 'board-29', label: '29 × 29', side: 29 },
   { id: 'board-39', label: '39 × 39', side: 39 },
-  { id: 'board-58', label: '58 × 58', side: 58 }
+  { id: 'board-58', label: '58 × 58', side: 58 },
+  { id: 'board-116', label: '116 × 116', side: 116 }
 ];
 
 export const longEdgePresets = [
