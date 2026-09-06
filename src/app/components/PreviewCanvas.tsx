@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Pattern } from '../../types';
 import { drawGrid } from '../../core/render/drawGrid';
 import type { LoadedPalette } from '../../core/palette/types';
+import { clampPan, PADDING } from '../gesture';
 import type { HoverCell, SourceImage, ViewState } from '../types';
 
 interface Props {
@@ -22,7 +23,6 @@ interface Props {
   onView: (patch: Partial<ViewState>) => void;
 }
 
-const PADDING = 40;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 96;
 
@@ -62,6 +62,7 @@ export function PreviewCanvas({
   const panRef = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number; moved: boolean } | null>(null);
   const fittedZoomRef = useRef(8);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
+  const suppressDblClickRef = useRef(0);
 
   const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, view.zoom));
   const cssWidth = pattern ? Math.ceil(pattern.width * zoom + PADDING * 2) : contentSize.width;
@@ -126,6 +127,18 @@ export function PreviewCanvas({
     onView({ zoom: next });
   };
 
+  const clampFor = (panX: number, panY: number, targetZoom: number) => {
+    if (!pattern) return { panX, panY };
+    return clampPan(
+      pattern.width * targetZoom,
+      pattern.height * targetZoom,
+      contentSize.width,
+      contentSize.height,
+      panX,
+      panY
+    );
+  };
+
   const hitCellAtClient = (clientX: number, clientY: number): HoverCell | null => {
     if (!pattern) return null;
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -160,6 +173,8 @@ export function PreviewCanvas({
     const last = lastTapRef.current;
     if (last && now - last.time < 350 && Math.hypot(clientX - last.x, clientY - last.y) < 32) {
       lastTapRef.current = null;
+      // 触摸双击已在此处理；抑制随后浏览器合成的 dblclick 再次触发 toggleDoubleZoom
+      suppressDblClickRef.current = now;
       toggleDoubleZoom(clientX, clientY);
       return;
     }
@@ -190,10 +205,11 @@ export function PreviewCanvas({
     const localCenterY = measured.centerY - rect.top;
     const gx = (localCenterX - PADDING - gesture.startPanX) / Math.max(1, gesture.startZoom);
     const gy = (localCenterY - PADDING - gesture.startPanY) / Math.max(1, gesture.startZoom);
+    const pan = clampFor(localCenterX - PADDING - gx * nextZoom, localCenterY - PADDING - gy * nextZoom, nextZoom);
     onView({
       zoom: nextZoom,
-      panX: localCenterX - PADDING - gx * nextZoom,
-      panY: localCenterY - PADDING - gy * nextZoom
+      panX: pan.panX,
+      panY: pan.panY
     });
   };
 
@@ -264,7 +280,11 @@ export function PreviewCanvas({
         }}
         onPointerMove={(event) => {
           const stored = pointersRef.current.get(event.pointerId);
-          if (!stored) return;
+          if (!stored) {
+            // 桌面鼠标悬停（无按键）：恢复 v1 的悬停看格（docs/01 §3.1）
+            if (event.pointerType === 'mouse') onHover(hitCellAtClient(event.clientX, event.clientY));
+            return;
+          }
           stored.x = event.clientX;
           stored.y = event.clientY;
           if (pointersRef.current.size >= 2) {
@@ -280,7 +300,8 @@ export function PreviewCanvas({
             pan.moved = true;
             onHover(null);
           }
-          onView({ panX: pan.startPanX + dx, panY: pan.startPanY + dy });
+          const nextPan = clampFor(pan.startPanX + dx, pan.startPanY + dy, zoom);
+          onView({ panX: nextPan.panX, panY: nextPan.panY });
         }}
         onPointerUp={(event) => {
           const wasTouch = event.pointerType === 'touch';
@@ -308,6 +329,7 @@ export function PreviewCanvas({
         }}
         onDoubleClick={(event) => {
           event.preventDefault();
+          if (Date.now() - suppressDblClickRef.current < 300) return;
           toggleDoubleZoom(event.clientX, event.clientY);
         }}
       >
