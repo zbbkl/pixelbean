@@ -144,7 +144,22 @@ export default function App() {
     } catch (error) {
       dispatch({ type: 'convertError', message: error instanceof Error ? error.message : '参数无法转换' });
     }
-  }, [source, settings, currentPalette, loadedPalette, workerReady]);
+  }, [
+    source,
+    currentPalette,
+    loadedPalette,
+    workerReady,
+    settings.gridMode,
+    settings.longEdge,
+    settings.boardSide,
+    settings.paletteId,
+    settings.bg,
+    settings.mode,
+    settings.maxColorsEnabled,
+    settings.maxColors,
+    settings.dither,
+    settings.adjust
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

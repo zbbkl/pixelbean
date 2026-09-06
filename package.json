@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run generate:palettes",
     "dev": "vite",
     "build": "npm run generate:palettes && tsc --noEmit && vite build",
     "preview": "vite preview",

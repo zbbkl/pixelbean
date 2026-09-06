@@ -34,6 +34,9 @@ function hexToRgb(hex) {
 }
 
 const raw = [...extractCsv('rawColorsCsv'), ...extractCsv('rawExtendedColorsCsv')];
+if (raw.length !== 291) {
+  throw new Error(`MARD 源数据应为 291 色，实际 ${raw.length}`);
+}
 const seen = new Set();
 const colors = raw.map(({ code, hex }, index) => {
   const padded = padCode(code);
