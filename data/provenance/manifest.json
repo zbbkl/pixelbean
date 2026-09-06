@@ -28,6 +28,48 @@
       "commit": "94b9999",
       "license": "MIT",
       "sha256": "553cf1eeb666c13ece242a6aab13cbee3e02342b0590844856a72cf40cce052b"
+    },
+    {
+      "name": "beadcolors-perler.csv",
+      "repo": "maxcleme/beadcolors",
+      "commit": "94b9999",
+      "license": "MIT",
+      "sha256": "b6f7d679633913d41a4f4c3b1e5bd74ead94ef1f14394481380650cf622ddaf6"
+    },
+    {
+      "name": "beadcolors-hama.csv",
+      "repo": "maxcleme/beadcolors",
+      "commit": "94b9999",
+      "license": "MIT",
+      "sha256": "6f857146bb545d9def58505d6d2339b08aee98dd7973b280f89ad0c59006b98e"
+    },
+    {
+      "name": "hank-beads.hex.txt",
+      "repo": "hank/perler-bead-map",
+      "commit": "e95f7b124dbe7bed117ee856d5c1bedb85f874c1",
+      "license": "MIT",
+      "sha256": "884c6647a67936e150ce329c4ad15a9fdcc6106960f0cddd5cacfefb133d19c3"
+    },
+    {
+      "name": "hank-LICENSE",
+      "repo": "hank/perler-bead-map",
+      "commit": "e95f7b124dbe7bed117ee856d5c1bedb85f874c1",
+      "license": "MIT",
+      "sha256": "afb11426e09da40a1ae4f8fa17ddcc6b6a52d14df04c29bc5bcd06eb8730624d"
+    },
+    {
+      "name": "beadmachine-colors_hama.json",
+      "repo": "cornelk/beadmachine",
+      "commit": "2cba9d970c85c8f1489cdedbfbe12eab92e477ff",
+      "license": "MIT",
+      "sha256": "554b95284da9bf44c4ea78edb4dcfd868ad3a1175378f1c6d01844e43f6afa37"
+    },
+    {
+      "name": "beadmachine-LICENSE",
+      "repo": "cornelk/beadmachine",
+      "commit": "2cba9d970c85c8f1489cdedbfbe12eab92e477ff",
+      "license": "MIT",
+      "sha256": "4bdf6982c8fcb33294cb429b5eae014fafab9af94b4e3cc47b19b00a8b82dec2"
     }
   ]
 }

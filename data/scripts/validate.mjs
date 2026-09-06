@@ -20,6 +20,10 @@ function rgbToHex(rgb) {
 
 for (const file of files.sort()) {
   const json = JSON.parse(await readFile(join(palettesDir, file), 'utf8'));
+  const expectedColors = { 'mard-291.json': 291, 'hama-midi.json': 92, 'perler-standard.json': 103 };
+  if (expectedColors[file] !== undefined && json.colors?.length !== expectedColors[file]) {
+    errors.push(`${file}: 色数应为 ${expectedColors[file]}，实际 ${json.colors?.length ?? 0}`);
+  }
   const requiredTop = ['schemaVersion', 'id', 'label', 'brand', 'standard', 'quality', 'source', 'license', 'colors'];
   for (const key of requiredTop) {
     if (json[key] === undefined) errors.push(`${file}: missing top-level ${key}`);

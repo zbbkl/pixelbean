@@ -1,0 +1,1359 @@
+{
+  "$schema": "../palette.schema.json",
+  "schemaVersion": "1.0",
+  "id": "perler-standard",
+  "label": "Perler Standard",
+  "brand": "Perler",
+  "standard": "standard",
+  "beadSizeMm": 5,
+  "quality": "community-legacy",
+  "source": "maxcleme/beadcolors gen/v1/perler.csv(MIT) 主数据；hank beads.hex.txt(MIT) 交叉核对",
+  "license": "MIT",
+  "licenseNote": "数据段复制自 MIT 项目并保留上游版权声明；快照与 SHA-256 见 data/provenance/",
+  "codeStyle": {
+    "stripLeadingBrandChar": false,
+    "zeroPad": 0
+  },
+  "notes": "hex 为工程近似色，与实物存在色差；图纸以 code 为准。透明/半透明色默认不参与自动匹配。",
+  "colors": [
+    {
+      "code": "80-15179",
+      "nameEn": "Evergreen",
+      "hex": "#305545",
+      "rgb": [
+        48,
+        85,
+        69
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 1
+    },
+    {
+      "code": "80-15181",
+      "nameEn": "Light Grey",
+      "hex": "#B3BAB8",
+      "rgb": [
+        179,
+        186,
+        184
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 2
+    },
+    {
+      "code": "80-15182",
+      "nameEn": "Lavender",
+      "hex": "#AF9FCE",
+      "rgb": [
+        175,
+        159,
+        206
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 3
+    },
+    {
+      "code": "80-15199",
+      "nameEn": "Shamrock",
+      "hex": "#008F53",
+      "rgb": [
+        0,
+        143,
+        83
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 4
+    },
+    {
+      "code": "80-15200",
+      "nameEn": "Cobalt",
+      "hex": "#0065B1",
+      "rgb": [
+        0,
+        101,
+        177
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 5
+    },
+    {
+      "code": "80-15201",
+      "nameEn": "Midnight",
+      "hex": "#2F3C55",
+      "rgb": [
+        47,
+        60,
+        85
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 6
+    },
+    {
+      "code": "80-15202",
+      "nameEn": "Robin's Egg",
+      "hex": "#A9CDD5",
+      "rgb": [
+        169,
+        205,
+        213
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 7
+    },
+    {
+      "code": "80-15203",
+      "nameEn": "Flamingo",
+      "hex": "#F2AFB7",
+      "rgb": [
+        242,
+        175,
+        183
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 8
+    },
+    {
+      "code": "80-15204",
+      "nameEn": "Salmon",
+      "hex": "#E1747A",
+      "rgb": [
+        225,
+        116,
+        122
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 9
+    },
+    {
+      "code": "80-15205",
+      "nameEn": "Fawn",
+      "hex": "#C9A385",
+      "rgb": [
+        201,
+        163,
+        133
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 10
+    },
+    {
+      "code": "80-15206",
+      "nameEn": "Pewter",
+      "hex": "#94A19D",
+      "rgb": [
+        148,
+        161,
+        157
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 11
+    },
+    {
+      "code": "80-15207",
+      "nameEn": "Charcoal",
+      "hex": "#4F595A",
+      "rgb": [
+        79,
+        89,
+        90
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 12
+    },
+    {
+      "code": "80-15208",
+      "nameEn": "Toasted Marshmallow",
+      "hex": "#DEDACE",
+      "rgb": [
+        222,
+        218,
+        206
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 13
+    },
+    {
+      "code": "80-15210",
+      "nameEn": "Orchid",
+      "hex": "#B1628E",
+      "rgb": [
+        177,
+        98,
+        142
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 14
+    },
+    {
+      "code": "80-15211",
+      "nameEn": "Tomato",
+      "hex": "#D14337",
+      "rgb": [
+        209,
+        67,
+        55
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 15
+    },
+    {
+      "code": "80-15212",
+      "nameEn": "Spice",
+      "hex": "#D9593A",
+      "rgb": [
+        217,
+        89,
+        58
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 16
+    },
+    {
+      "code": "80-15213",
+      "nameEn": "Apricot",
+      "hex": "#F5A168",
+      "rgb": [
+        245,
+        161,
+        104
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 17
+    },
+    {
+      "code": "80-15214",
+      "nameEn": "Sherbet",
+      "hex": "#D8E47C",
+      "rgb": [
+        216,
+        228,
+        124
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 18
+    },
+    {
+      "code": "80-15215",
+      "nameEn": "Mist",
+      "hex": "#93B0BD",
+      "rgb": [
+        147,
+        176,
+        189
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 19
+    },
+    {
+      "code": "80-15216",
+      "nameEn": "Sky",
+      "hex": "#4AC0D8",
+      "rgb": [
+        74,
+        192,
+        216
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 20
+    },
+    {
+      "code": "80-15217",
+      "nameEn": "Lagoon",
+      "hex": "#00A4AC",
+      "rgb": [
+        0,
+        164,
+        172
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 21
+    },
+    {
+      "code": "80-15218",
+      "nameEn": "Teal",
+      "hex": "#047F8A",
+      "rgb": [
+        4,
+        127,
+        138
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 22
+    },
+    {
+      "code": "80-15219",
+      "nameEn": "Fern",
+      "hex": "#7F971A",
+      "rgb": [
+        127,
+        151,
+        26
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 23
+    },
+    {
+      "code": "80-15220",
+      "nameEn": "Olive",
+      "hex": "#696E31",
+      "rgb": [
+        105,
+        110,
+        49
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 24
+    },
+    {
+      "code": "80-15961",
+      "nameEn": "Cherry",
+      "hex": "#9D2B3A",
+      "rgb": [
+        157,
+        43,
+        58
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 25
+    },
+    {
+      "code": "80-19001",
+      "nameEn": "White",
+      "hex": "#EAEFEE",
+      "rgb": [
+        234,
+        239,
+        238
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 26
+    },
+    {
+      "code": "80-19002",
+      "nameEn": "Creme",
+      "hex": "#E1E2BB",
+      "rgb": [
+        225,
+        226,
+        187
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 27
+    },
+    {
+      "code": "80-19003",
+      "nameEn": "Yellow",
+      "hex": "#E7CE3E",
+      "rgb": [
+        231,
+        206,
+        62
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 28
+    },
+    {
+      "code": "80-19004",
+      "nameEn": "Orange",
+      "hex": "#EB7B31",
+      "rgb": [
+        235,
+        123,
+        49
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 29
+    },
+    {
+      "code": "80-19005",
+      "nameEn": "Red",
+      "hex": "#B0353C",
+      "rgb": [
+        176,
+        53,
+        60
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 30
+    },
+    {
+      "code": "80-19006",
+      "nameEn": "Bubblegum",
+      "hex": "#D8729A",
+      "rgb": [
+        216,
+        114,
+        154
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 31
+    },
+    {
+      "code": "80-19007",
+      "nameEn": "Purple",
+      "hex": "#684B86",
+      "rgb": [
+        104,
+        75,
+        134
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 32
+    },
+    {
+      "code": "80-19008",
+      "nameEn": "Dark Blue",
+      "hex": "#0E5092",
+      "rgb": [
+        14,
+        80,
+        146
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 33
+    },
+    {
+      "code": "80-19009",
+      "nameEn": "Light Blue",
+      "hex": "#278CC9",
+      "rgb": [
+        39,
+        140,
+        201
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 34
+    },
+    {
+      "code": "80-19010",
+      "nameEn": "Dark Green",
+      "hex": "#007B4E",
+      "rgb": [
+        0,
+        123,
+        78
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 35
+    },
+    {
+      "code": "80-19011",
+      "nameEn": "Light Green",
+      "hex": "#18C7B1",
+      "rgb": [
+        24,
+        199,
+        177
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 36
+    },
+    {
+      "code": "80-19012",
+      "nameEn": "Brown",
+      "hex": "#674C44",
+      "rgb": [
+        103,
+        76,
+        68
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 37
+    },
+    {
+      "code": "80-19017",
+      "nameEn": "Grey",
+      "hex": "#909497",
+      "rgb": [
+        144,
+        148,
+        151
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 38
+    },
+    {
+      "code": "80-19018",
+      "nameEn": "Black",
+      "hex": "#323234",
+      "rgb": [
+        50,
+        50,
+        52
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 39
+    },
+    {
+      "code": "80-19020",
+      "nameEn": "Rust",
+      "hex": "#995043",
+      "rgb": [
+        153,
+        80,
+        67
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 40
+    },
+    {
+      "code": "80-19021",
+      "nameEn": "Light Brown",
+      "hex": "#936848",
+      "rgb": [
+        147,
+        104,
+        72
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 41
+    },
+    {
+      "code": "80-19033",
+      "nameEn": "Peach",
+      "hex": "#E9BFB9",
+      "rgb": [
+        233,
+        191,
+        185
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 42
+    },
+    {
+      "code": "80-19035",
+      "nameEn": "Tan",
+      "hex": "#C5AC90",
+      "rgb": [
+        197,
+        172,
+        144
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 43
+    },
+    {
+      "code": "80-19038",
+      "nameEn": "Magenta",
+      "hex": "#E04284",
+      "rgb": [
+        224,
+        66,
+        132
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 44
+    },
+    {
+      "code": "80-19052",
+      "nameEn": "Pastel Blue",
+      "hex": "#4A9CCF",
+      "rgb": [
+        74,
+        156,
+        207
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 45
+    },
+    {
+      "code": "80-19053",
+      "nameEn": "Pastel Green",
+      "hex": "#6DCC94",
+      "rgb": [
+        109,
+        204,
+        148
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 46
+    },
+    {
+      "code": "80-19054",
+      "nameEn": "Pastel Lavender",
+      "hex": "#937FBF",
+      "rgb": [
+        147,
+        127,
+        191
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 47
+    },
+    {
+      "code": "80-19056",
+      "nameEn": "Pastel Yellow",
+      "hex": "#E9E290",
+      "rgb": [
+        233,
+        226,
+        144
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 48
+    },
+    {
+      "code": "80-19057",
+      "nameEn": "Cheddar",
+      "hex": "#FBB146",
+      "rgb": [
+        251,
+        177,
+        70
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 49
+    },
+    {
+      "code": "80-19058",
+      "nameEn": "Toothpaste",
+      "hex": "#96D1D4",
+      "rgb": [
+        150,
+        209,
+        212
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 50
+    },
+    {
+      "code": "80-19059",
+      "nameEn": "Hot Coral",
+      "hex": "#DD595B",
+      "rgb": [
+        221,
+        89,
+        91
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 51
+    },
+    {
+      "code": "80-19060",
+      "nameEn": "Plum",
+      "hex": "#A75D9D",
+      "rgb": [
+        167,
+        93,
+        157
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 52
+    },
+    {
+      "code": "80-19061",
+      "nameEn": "Kiwi Lime",
+      "hex": "#69B845",
+      "rgb": [
+        105,
+        184,
+        69
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 53
+    },
+    {
+      "code": "80-19062",
+      "nameEn": "Turquoise",
+      "hex": "#0098C5",
+      "rgb": [
+        0,
+        152,
+        197
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 54
+    },
+    {
+      "code": "80-19063",
+      "nameEn": "Blush",
+      "hex": "#F99297",
+      "rgb": [
+        249,
+        146,
+        151
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 55
+    },
+    {
+      "code": "80-19070",
+      "nameEn": "Periwinkle Blue",
+      "hex": "#6683B7",
+      "rgb": [
+        102,
+        131,
+        183
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 56
+    },
+    {
+      "code": "80-19079",
+      "nameEn": "Light Pink",
+      "hex": "#E1BCCE",
+      "rgb": [
+        225,
+        188,
+        206
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 57
+    },
+    {
+      "code": "80-19080",
+      "nameEn": "Green",
+      "hex": "#4DAB64",
+      "rgb": [
+        77,
+        171,
+        100
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 58
+    },
+    {
+      "code": "80-19083",
+      "nameEn": "Pink",
+      "hex": "#D45496",
+      "rgb": [
+        212,
+        84,
+        150
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 59
+    },
+    {
+      "code": "80-19088",
+      "nameEn": "Raspberry",
+      "hex": "#983864",
+      "rgb": [
+        152,
+        56,
+        100
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 60
+    },
+    {
+      "code": "80-19090",
+      "nameEn": "Butterscotch",
+      "hex": "#DA9964",
+      "rgb": [
+        218,
+        153,
+        100
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 61
+    },
+    {
+      "code": "80-19091",
+      "nameEn": "Parrot Green",
+      "hex": "#009188",
+      "rgb": [
+        0,
+        145,
+        136
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 62
+    },
+    {
+      "code": "80-19092",
+      "nameEn": "Dark Grey",
+      "hex": "#585C61",
+      "rgb": [
+        88,
+        92,
+        97
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 63
+    },
+    {
+      "code": "80-19093",
+      "nameEn": "Blueberry Creme",
+      "hex": "#85A8E3",
+      "rgb": [
+        133,
+        168,
+        227
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 64
+    },
+    {
+      "code": "80-19096",
+      "nameEn": "Cranapple",
+      "hex": "#843947",
+      "rgb": [
+        132,
+        57,
+        71
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 65
+    },
+    {
+      "code": "80-19097",
+      "nameEn": "Prickly Pear",
+      "hex": "#BBC938",
+      "rgb": [
+        187,
+        201,
+        56
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 66
+    },
+    {
+      "code": "80-19098",
+      "nameEn": "Sand",
+      "hex": "#E5BE9E",
+      "rgb": [
+        229,
+        190,
+        158
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 67
+    },
+    {
+      "code": "80-15240",
+      "nameEn": "Mint",
+      "hex": "#B3EED5",
+      "rgb": [
+        179,
+        238,
+        213
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 68
+    },
+    {
+      "code": "80-15241",
+      "nameEn": "Sour Apple",
+      "hex": "#A3DE6F",
+      "rgb": [
+        163,
+        222,
+        111
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 69
+    },
+    {
+      "code": "80-15242",
+      "nameEn": "Cotton Candy",
+      "hex": "#F479B0",
+      "rgb": [
+        244,
+        121,
+        176
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 70
+    },
+    {
+      "code": "80-15243",
+      "nameEn": "Grape",
+      "hex": "#503B9C",
+      "rgb": [
+        80,
+        59,
+        156
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 71
+    },
+    {
+      "code": "80-15244",
+      "nameEn": "Rose",
+      "hex": "#D25D72",
+      "rgb": [
+        210,
+        93,
+        114
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 72
+    },
+    {
+      "code": "80-15245",
+      "nameEn": "Iris",
+      "hex": "#4E56A3",
+      "rgb": [
+        78,
+        86,
+        163
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 73
+    },
+    {
+      "code": "80-15246",
+      "nameEn": "Tangerine",
+      "hex": "#FD5918",
+      "rgb": [
+        253,
+        89,
+        24
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 74
+    },
+    {
+      "code": "80-15247",
+      "nameEn": "Forest",
+      "hex": "#005D57",
+      "rgb": [
+        0,
+        93,
+        87
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 75
+    },
+    {
+      "code": "80-15248",
+      "nameEn": "Eggplant",
+      "hex": "#6F3255",
+      "rgb": [
+        111,
+        50,
+        85
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 76
+    },
+    {
+      "code": "80-15249",
+      "nameEn": "Honey",
+      "hex": "#DA8C2C",
+      "rgb": [
+        218,
+        140,
+        44
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 77
+    },
+    {
+      "code": "80-15250",
+      "nameEn": "Gingerbread",
+      "hex": "#7E5446",
+      "rgb": [
+        126,
+        84,
+        70
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 78
+    },
+    {
+      "code": "80-15251",
+      "nameEn": "Thistle",
+      "hex": "#8C8CA7",
+      "rgb": [
+        140,
+        140,
+        167
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 79
+    },
+    {
+      "code": "80-15252",
+      "nameEn": "Slate Blue",
+      "hex": "#5E6D7B",
+      "rgb": [
+        94,
+        109,
+        123
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 80
+    },
+    {
+      "code": "80-15253",
+      "nameEn": "Denim",
+      "hex": "#4C6388",
+      "rgb": [
+        76,
+        99,
+        136
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 81
+    },
+    {
+      "code": "80-15254",
+      "nameEn": "Sage",
+      "hex": "#9AA98E",
+      "rgb": [
+        154,
+        169,
+        142
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 82
+    },
+    {
+      "code": "80-15255",
+      "nameEn": "Orange Cream",
+      "hex": "#EFB79B",
+      "rgb": [
+        239,
+        183,
+        155
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 83
+    },
+    {
+      "code": "80-15256",
+      "nameEn": "Fruit Punch",
+      "hex": "#CA3B65",
+      "rgb": [
+        202,
+        59,
+        101
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 84
+    },
+    {
+      "code": "80-15257",
+      "nameEn": "Fuchsia",
+      "hex": "#CB59B9",
+      "rgb": [
+        203,
+        89,
+        185
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 85
+    },
+    {
+      "code": "80-15258",
+      "nameEn": "Mulberry",
+      "hex": "#714875",
+      "rgb": [
+        113,
+        72,
+        117
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 86
+    },
+    {
+      "code": "80-15259",
+      "nameEn": "Slime",
+      "hex": "#C8C85C",
+      "rgb": [
+        200,
+        200,
+        92
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 87
+    },
+    {
+      "code": "80-15260",
+      "nameEn": "Stone",
+      "hex": "#988C8C",
+      "rgb": [
+        152,
+        140,
+        140
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 88
+    },
+    {
+      "code": "80-15261",
+      "nameEn": "Dark Spruce",
+      "hex": "#14313B",
+      "rgb": [
+        20,
+        49,
+        59
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 89
+    },
+    {
+      "code": "80-15262",
+      "nameEn": "Cocoa",
+      "hex": "#392928",
+      "rgb": [
+        57,
+        41,
+        40
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 90
+    },
+    {
+      "code": "80-15265",
+      "nameEn": "Twilight Plum",
+      "hex": "#C685B1",
+      "rgb": [
+        198,
+        133,
+        177
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 91
+    },
+    {
+      "code": "80-15266",
+      "nameEn": "Caribbean Sea",
+      "hex": "#6CC8AD",
+      "rgb": [
+        108,
+        200,
+        173
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 92
+    },
+    {
+      "code": "80-15267",
+      "nameEn": "Frosted Lilac",
+      "hex": "#CDB7C3",
+      "rgb": [
+        205,
+        183,
+        195
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 93
+    },
+    {
+      "code": "80-15273",
+      "nameEn": "Brick",
+      "hex": "#FC9574",
+      "rgb": [
+        252,
+        149,
+        116
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 94
+    },
+    {
+      "code": "80-15274",
+      "nameEn": "Rich Butter",
+      "hex": "#F6CA69",
+      "rgb": [
+        246,
+        202,
+        105
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 95
+    },
+    {
+      "code": "80-15275",
+      "nameEn": "Peacock",
+      "hex": "#0090AC",
+      "rgb": [
+        0,
+        144,
+        172
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 96
+    },
+    {
+      "code": "80-15276",
+      "nameEn": "Carnation Pink",
+      "hex": "#F8C7C9",
+      "rgb": [
+        248,
+        199,
+        201
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 97
+    },
+    {
+      "code": "80-15089",
+      "nameEn": "Neon Blue",
+      "hex": "#406AE1",
+      "rgb": [
+        64,
+        106,
+        225
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 98
+    },
+    {
+      "code": "80-15268",
+      "nameEn": "Sunflower",
+      "hex": "#DEBA0B",
+      "rgb": [
+        222,
+        186,
+        11
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 99
+    },
+    {
+      "code": "80-15269",
+      "nameEn": "Lemon",
+      "hex": "#F6D901",
+      "rgb": [
+        246,
+        217,
+        1
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 100
+    },
+    {
+      "code": "80-15263",
+      "nameEn": "Celery",
+      "hex": "#BED4A6",
+      "rgb": [
+        190,
+        212,
+        166
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 101
+    },
+    {
+      "code": "80-15239",
+      "nameEn": "Mocha",
+      "hex": "#C8B693",
+      "rgb": [
+        200,
+        182,
+        147
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 102
+    },
+    {
+      "code": "80-15272",
+      "nameEn": "Coral",
+      "hex": "#FF9A8B",
+      "rgb": [
+        255,
+        154,
+        139
+      ],
+      "kind": "solid",
+      "family": "P",
+      "sortKey": 103
+    }
+  ]
+}

@@ -75,3 +75,90 @@ const palette = {
 await mkdir(dirname(outPath), { recursive: true });
 await writeFile(outPath, `${JSON.stringify(palette, null, 2)}\n`, 'utf8');
 console.log(`wrote ${outPath}: ${colors.length} colors`);
+
+function kindFor(name, brand) {
+  const lower = name.toLowerCase();
+  if (brand === 'Hama' && lower === 'clear') return 'transparent';
+  if (lower.includes('transparent') || lower.includes('translucent')) return 'special';
+  return 'solid';
+}
+
+async function writeBeadcolorsSet({
+  sourceName,
+  outName,
+  id,
+  label,
+  brand,
+  standard,
+  quality,
+  source,
+  zeroPad
+}) {
+  const text = await readFile(join(provenance, sourceName), 'utf8');
+  const lines = text.trim().split(/\r?\n/);
+  const seen = new Set();
+  const colors = lines.map((line, index) => {
+    const fields = line.split(',');
+    const rawCode = fields[0].trim();
+    const name = fields[1].trim();
+    const code = brand === 'Hama' ? padCode(rawCode) : rawCode;
+    if (seen.has(code)) throw new Error(`${id}: duplicate code ${code}`);
+    seen.add(code);
+    const rgb = [fields[2], fields[3], fields[4]].map(Number);
+    const hex = fields[5].trim().toUpperCase();
+    return {
+      code,
+      nameEn: name,
+      hex,
+      rgb,
+      kind: kindFor(name, brand),
+      family: brand === 'Hama' ? 'H' : 'P',
+      sortKey: index + 1
+    };
+  });
+  const set = {
+    $schema: '../palette.schema.json',
+    schemaVersion: '1.0',
+    id,
+    label,
+    brand,
+    standard,
+    beadSizeMm: 5,
+    quality,
+    source,
+    license: 'MIT',
+    licenseNote: '数据段复制自 MIT 项目并保留上游版权声明；快照与 SHA-256 见 data/provenance/',
+    codeStyle: { stripLeadingBrandChar: false, zeroPad },
+    notes: 'hex 为工程近似色，与实物存在色差；图纸以 code 为准。透明/半透明色默认不参与自动匹配。',
+    colors
+  };
+  const out = join(root, 'palettes', outName);
+  await writeFile(out, `${JSON.stringify(set, null, 2)}\n`, 'utf8');
+  console.log(`wrote ${out}: ${colors.length} colors`);
+}
+
+await writeBeadcolorsSet({
+  sourceName: 'beadcolors-hama.csv',
+  outName: 'hama-midi.json',
+  id: 'hama-midi',
+  label: 'Hama Midi',
+  brand: 'Hama',
+  standard: 'midi',
+  quality: 'community-legacy',
+  source:
+    'maxcleme/beadcolors gen/v1/hama.csv(MIT) 主数据；beadmachine colors_hama.json(MIT) + hank beads.hex.txt(MIT) 交叉核对',
+  zeroPad: 2
+});
+
+await writeBeadcolorsSet({
+  sourceName: 'beadcolors-perler.csv',
+  outName: 'perler-standard.json',
+  id: 'perler-standard',
+  label: 'Perler Standard',
+  brand: 'Perler',
+  standard: 'standard',
+  quality: 'community-legacy',
+  source:
+    'maxcleme/beadcolors gen/v1/perler.csv(MIT) 主数据；hank beads.hex.txt(MIT) 交叉核对',
+  zeroPad: 0
+});

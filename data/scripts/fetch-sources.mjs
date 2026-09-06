@@ -34,6 +34,48 @@ const sources = [
     commit: '94b9999',
     license: 'MIT',
     path: 'LICENSE'
+  },
+  {
+    name: 'beadcolors-perler.csv',
+    repo: 'maxcleme/beadcolors',
+    commit: '94b9999',
+    license: 'MIT',
+    path: 'gen/v1/perler.csv'
+  },
+  {
+    name: 'beadcolors-hama.csv',
+    repo: 'maxcleme/beadcolors',
+    commit: '94b9999',
+    license: 'MIT',
+    path: 'gen/v1/hama.csv'
+  },
+  {
+    name: 'hank-beads.hex.txt',
+    repo: 'hank/perler-bead-map',
+    commit: 'e95f7b124dbe7bed117ee856d5c1bedb85f874c1',
+    license: 'MIT',
+    path: 'beads.hex.txt'
+  },
+  {
+    name: 'hank-LICENSE',
+    repo: 'hank/perler-bead-map',
+    commit: 'e95f7b124dbe7bed117ee856d5c1bedb85f874c1',
+    license: 'MIT',
+    path: 'LICENSE'
+  },
+  {
+    name: 'beadmachine-colors_hama.json',
+    repo: 'cornelk/beadmachine',
+    commit: '2cba9d970c85c8f1489cdedbfbe12eab92e477ff',
+    license: 'MIT',
+    path: 'colors_hama.json'
+  },
+  {
+    name: 'beadmachine-LICENSE',
+    repo: 'cornelk/beadmachine',
+    commit: '2cba9d970c85c8f1489cdedbfbe12eab92e477ff',
+    license: 'MIT',
+    path: 'LICENSE'
   }
 ];
 

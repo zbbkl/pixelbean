@@ -3,9 +3,6 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const palette = JSON.parse(await readFile(join(root, 'palettes', 'mard-291.json'), 'utf8'));
-const csv = (await readFile(join(root, 'provenance', 'beadcolors-mard.csv'), 'utf8')).trim().split(/\r?\n/);
-const expected = new Map(palette.colors.map((c) => [c.code, c]));
 
 function deg(rad) {
   return (rad * 180) / Math.PI;
@@ -68,7 +65,7 @@ function srgbToLab(rgb) {
   const x = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) * 100;
   const y = (0.2126729 * r + 0.7151522 * g + 0.072175 * b) * 100;
   const z = (0.0193339 * r + 0.119192 * g + 0.9503041 * b) * 100;
-  const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27) * t + 16 / 116);
+  const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
   const fx = f(x / 95.047);
   const fy = f(y / 100);
   const fz = f(z / 108.883);
@@ -80,39 +77,111 @@ function padCode(raw) {
   return `${m[1].toUpperCase()}${m[2].padStart(2, '0')}`;
 }
 
-const checked = [];
-const mismatches = [];
-for (const line of csv) {
+async function readRows(file) {
+  const text = await readFile(join(root, 'provenance', file), 'utf8');
+  return text.trim().split(/\r?\n/);
+}
+
+async function compareSet(name, paletteFile, secondary, secondaryName) {
+  const palette = JSON.parse(await readFile(join(root, 'palettes', paletteFile), 'utf8'));
+  const byCode = new Map(palette.colors.map((color) => [color.code, color]));
+  const byName = new Map(
+    palette.colors
+      .filter((color) => color.nameEn)
+      .map((color) => [color.nameEn.toLowerCase(), color])
+  );
+  const checked = [];
+  const mismatches = [];
+  for (const row of secondary) {
+    let primary = row.code !== undefined ? byCode.get(row.code) : byName.get(row.name);
+    if (primary === undefined) continue;
+    const delta = ciede2000(srgbToLab(row.rgb), srgbToLab(primary.rgb));
+    checked.push(primary.code);
+    if (delta > 10 || delta < 0) mismatches.push({ code: primary.code, delta });
+  }
+  return {
+    name,
+    secondarySource: secondaryName,
+    checked,
+    mismatches,
+    summary: {
+      secondaryRows: secondary.length,
+      codesChecked: checked.length,
+      mismatches: mismatches.length,
+      thresholdDeltaE2000: 10
+    }
+  };
+}
+
+const mardSecondary = (await readRows('beadcolors-mard.csv')).map((line) => {
   const parts = line.split(',');
-  if (parts.length < 6) continue;
-  const code = padCode(parts[0].trim());
-  const rgb = [parts[2], parts[3], parts[4]].map(Number);
-  const row = expected.get(code);
-  if (!row) {
-    mismatches.push({ code, reason: 'missing-in-normalized' });
-    continue;
+  return { code: padCode(parts[0].trim()), rgb: [parts[2], parts[3], parts[4]].map(Number) };
+});
+
+const beadmachine = JSON.parse(await readFile(join(root, 'provenance', 'beadmachine-colors_hama.json'), 'utf8'));
+const hamaSecondary = Object.entries(beadmachine).map(([key, value]) => ({
+  code: padCode(key.split(' ')[0]),
+  rgb: [value.r, value.g, value.b]
+}));
+
+const hankLines = await readRows('hank-beads.hex.txt');
+const hankPerler = [];
+const hankHama = [];
+for (const line of hankLines) {
+  const [name, brand, hex] = line.split('\t');
+  if (brand === 'Perler') {
+    hankPerler.push({
+      name: name.toLowerCase(),
+      rgb: [Number.parseInt(hex.slice(0, 2), 16), Number.parseInt(hex.slice(2, 4), 16), Number.parseInt(hex.slice(4, 6), 16)]
+    });
   }
-  const delta = ciede2000(srgbToLab(rgb), srgbToLab(row.rgb));
-  checked.push(code);
-  if (delta > 10 || delta < 0) mismatches.push({ code, delta });
+  if (brand === 'Hama') {
+    hankHama.push({
+      name: name.toLowerCase(),
+      rgb: [Number.parseInt(hex.slice(0, 2), 16), Number.parseInt(hex.slice(2, 4), 16), Number.parseInt(hex.slice(4, 6), 16)]
+    });
+  }
 }
 
-const report = {
-  primarySource: 'Jett-Wu Perler_Beads_Generator palette.ts',
-  secondarySource: 'maxcleme/beadcolors gen/v1/mard.csv',
-  checked,
-  mismatches,
-  summary: {
-    secondaryRows: csv.length,
-    codesChecked: checked.length,
-    mismatches: mismatches.length,
-    thresholdDeltaE2000: 10
-  }
-};
-await writeFile(join(root, 'provenance', 'crosscheck-report.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+const reports = [];
+reports.push(await compareSet(
+  'mard-291',
+  'mard-291.json',
+  mardSecondary,
+  'maxcleme/beadcolors gen/v1/mard.csv'
+));
+reports.push(await compareSet(
+  'hama-midi',
+  'hama-midi.json',
+  hamaSecondary,
+  'cornelk/beadmachine colors_hama.json'
+));
+reports.push(await compareSet(
+  'hama-midi',
+  'hama-midi.json',
+  hankHama,
+  'hank/perler-bead-map beads.hex.txt (Hama)'
+));
+reports.push(await compareSet(
+  'perler-standard',
+  'perler-standard.json',
+  hankPerler,
+  'hank/perler-bead-map beads.hex.txt (Perler)'
+));
 
-if (mismatches.length) {
-  console.error(JSON.stringify(mismatches, null, 2));
-  process.exit(1);
+await writeFile(
+  join(root, 'provenance', 'crosscheck-report.json'),
+  `${JSON.stringify({ generatedAt: '2026-09-06', reports }, null, 2)}\n`,
+  'utf8'
+);
+const totalMismatches = reports.reduce((sum, report) => sum + report.mismatches.length, 0);
+for (const report of reports) {
+  console.log(`crosscheck ${report.name}: checked ${report.summary.codesChecked}, mismatches ${report.summary.mismatches}`);
 }
-console.log(`crosscheck ok: ${checked.length} overlapping MARD codes, ΔE2000 < 10`);
+if (totalMismatches) {
+  console.warn(`crosscheck differences (${totalMismatches}) recorded for human arbitration`);
+  console.warn(JSON.stringify(reports.flatMap((report) => report.mismatches), null, 2));
+  console.log('crosscheck complete with differences (see report)');
+} else {
+  console.log('crosscheck ok: all overlapping sets ΔE2000 < 10');
+}

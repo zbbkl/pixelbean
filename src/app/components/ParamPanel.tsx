@@ -122,7 +122,7 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
           >
             {Object.values(palettes).map((palette) => (
               <option key={palette.id} value={palette.id}>
-                {palette.label}
+                {palette.label} · {palette.quality === 'official' ? '官方' : palette.quality === 'community-verified' ? '社区核对' : '社区旧表'}
               </option>
             ))}
           </select>

@@ -1,0 +1,1216 @@
+{
+  "$schema": "../palette.schema.json",
+  "schemaVersion": "1.0",
+  "id": "hama-midi",
+  "label": "Hama Midi",
+  "brand": "Hama",
+  "standard": "midi",
+  "beadSizeMm": 5,
+  "quality": "community-legacy",
+  "source": "maxcleme/beadcolors gen/v1/hama.csv(MIT) 主数据；beadmachine colors_hama.json(MIT) + hank beads.hex.txt(MIT) 交叉核对",
+  "license": "MIT",
+  "licenseNote": "数据段复制自 MIT 项目并保留上游版权声明；快照与 SHA-256 见 data/provenance/",
+  "codeStyle": {
+    "stripLeadingBrandChar": false,
+    "zeroPad": 2
+  },
+  "notes": "hex 为工程近似色，与实物存在色差；图纸以 code 为准。透明/半透明色默认不参与自动匹配。",
+  "colors": [
+    {
+      "code": "H01",
+      "nameEn": "White",
+      "hex": "#E5ECF1",
+      "rgb": [
+        229,
+        236,
+        241
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 1
+    },
+    {
+      "code": "H02",
+      "nameEn": "Cream",
+      "hex": "#E4E4C5",
+      "rgb": [
+        228,
+        228,
+        197
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 2
+    },
+    {
+      "code": "H03",
+      "nameEn": "Yellow",
+      "hex": "#E9C704",
+      "rgb": [
+        233,
+        199,
+        4
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 3
+    },
+    {
+      "code": "H04",
+      "nameEn": "Orange",
+      "hex": "#D14803",
+      "rgb": [
+        209,
+        72,
+        3
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 4
+    },
+    {
+      "code": "H05",
+      "nameEn": "Red",
+      "hex": "#B4060E",
+      "rgb": [
+        180,
+        6,
+        14
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 5
+    },
+    {
+      "code": "H06",
+      "nameEn": "Pink",
+      "hex": "#EA8AA5",
+      "rgb": [
+        234,
+        138,
+        165
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 6
+    },
+    {
+      "code": "H07",
+      "nameEn": "Purple",
+      "hex": "#712297",
+      "rgb": [
+        113,
+        34,
+        151
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 7
+    },
+    {
+      "code": "H08",
+      "nameEn": "Blue",
+      "hex": "#0239A3",
+      "rgb": [
+        2,
+        57,
+        163
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 8
+    },
+    {
+      "code": "H09",
+      "nameEn": "Light Blue",
+      "hex": "#025BC3",
+      "rgb": [
+        2,
+        91,
+        195
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 9
+    },
+    {
+      "code": "H10",
+      "nameEn": "Green",
+      "hex": "#027643",
+      "rgb": [
+        2,
+        118,
+        67
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 10
+    },
+    {
+      "code": "H11",
+      "nameEn": "Light Green",
+      "hex": "#19CDA7",
+      "rgb": [
+        25,
+        205,
+        167
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 11
+    },
+    {
+      "code": "H12",
+      "nameEn": "Brown",
+      "hex": "#3E271A",
+      "rgb": [
+        62,
+        39,
+        26
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 12
+    },
+    {
+      "code": "H13",
+      "nameEn": "Transparent Red",
+      "hex": "#C02435",
+      "rgb": [
+        192,
+        36,
+        53
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 13
+    },
+    {
+      "code": "H14",
+      "nameEn": "Transparent Yellow",
+      "hex": "#E4AA32",
+      "rgb": [
+        228,
+        170,
+        50
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 14
+    },
+    {
+      "code": "H16",
+      "nameEn": "Transparent Green",
+      "hex": "#37B876",
+      "rgb": [
+        55,
+        184,
+        118
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 15
+    },
+    {
+      "code": "H17",
+      "nameEn": "Grey",
+      "hex": "#838F98",
+      "rgb": [
+        131,
+        143,
+        152
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 16
+    },
+    {
+      "code": "H18",
+      "nameEn": "Black",
+      "hex": "#141315",
+      "rgb": [
+        20,
+        19,
+        21
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 17
+    },
+    {
+      "code": "H19",
+      "nameEn": "Clear",
+      "hex": "#D8D2CE",
+      "rgb": [
+        216,
+        210,
+        206
+      ],
+      "kind": "transparent",
+      "family": "H",
+      "sortKey": 18
+    },
+    {
+      "code": "H20",
+      "nameEn": "Reddish Brown",
+      "hex": "#8D2A0F",
+      "rgb": [
+        141,
+        42,
+        15
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 19
+    },
+    {
+      "code": "H21",
+      "nameEn": "Light Brown",
+      "hex": "#BE6C21",
+      "rgb": [
+        190,
+        108,
+        33
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 20
+    },
+    {
+      "code": "H22",
+      "nameEn": "Dark Red",
+      "hex": "#91020A",
+      "rgb": [
+        145,
+        2,
+        10
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 21
+    },
+    {
+      "code": "H24",
+      "nameEn": "Translucent Purple",
+      "hex": "#683E9A",
+      "rgb": [
+        104,
+        62,
+        154
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 22
+    },
+    {
+      "code": "H25",
+      "nameEn": "Translucent Brown",
+      "hex": "#87593D",
+      "rgb": [
+        135,
+        89,
+        61
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 23
+    },
+    {
+      "code": "H26",
+      "nameEn": "Matt Rose",
+      "hex": "#E8A498",
+      "rgb": [
+        232,
+        164,
+        152
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 24
+    },
+    {
+      "code": "H27",
+      "nameEn": "Beige",
+      "hex": "#DCB18E",
+      "rgb": [
+        220,
+        177,
+        142
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 25
+    },
+    {
+      "code": "H28",
+      "nameEn": "Dark Green",
+      "hex": "#1E2C1C",
+      "rgb": [
+        30,
+        44,
+        28
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 26
+    },
+    {
+      "code": "H29",
+      "nameEn": "Claret",
+      "hex": "#BF0142",
+      "rgb": [
+        191,
+        1,
+        66
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 27
+    },
+    {
+      "code": "H30",
+      "nameEn": "Burgundy",
+      "hex": "#4E0C1B",
+      "rgb": [
+        78,
+        12,
+        27
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 28
+    },
+    {
+      "code": "H31",
+      "nameEn": "Turquoise",
+      "hex": "#489AB9",
+      "rgb": [
+        72,
+        154,
+        185
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 29
+    },
+    {
+      "code": "H32",
+      "nameEn": "Neon Fuchsia",
+      "hex": "#FF208D",
+      "rgb": [
+        255,
+        32,
+        141
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 30
+    },
+    {
+      "code": "H33",
+      "nameEn": "Cerise",
+      "hex": "#FF3956",
+      "rgb": [
+        255,
+        57,
+        86
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 31
+    },
+    {
+      "code": "H34",
+      "nameEn": "Neon Yellow",
+      "hex": "#E5EF13",
+      "rgb": [
+        229,
+        239,
+        19
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 32
+    },
+    {
+      "code": "H35",
+      "nameEn": "Neon Red",
+      "hex": "#FF2833",
+      "rgb": [
+        255,
+        40,
+        51
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 33
+    },
+    {
+      "code": "H36",
+      "nameEn": "Neon Blue",
+      "hex": "#2353B0",
+      "rgb": [
+        35,
+        83,
+        176
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 34
+    },
+    {
+      "code": "H37",
+      "nameEn": "Neon Green",
+      "hex": "#06B73C",
+      "rgb": [
+        6,
+        183,
+        60
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 35
+    },
+    {
+      "code": "H38",
+      "nameEn": "Neon Orange",
+      "hex": "#FD8600",
+      "rgb": [
+        253,
+        134,
+        0
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 36
+    },
+    {
+      "code": "H39",
+      "nameEn": "Fluorescent Yellow",
+      "hex": "#F1F21C",
+      "rgb": [
+        241,
+        242,
+        28
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 37
+    },
+    {
+      "code": "H40",
+      "nameEn": "Fluorescent Orange",
+      "hex": "#FE630B",
+      "rgb": [
+        254,
+        99,
+        11
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 38
+    },
+    {
+      "code": "H41",
+      "nameEn": "Fluorescent Blue",
+      "hex": "#2659B2",
+      "rgb": [
+        38,
+        89,
+        178
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 39
+    },
+    {
+      "code": "H42",
+      "nameEn": "Fluorescent Green",
+      "hex": "#0CBD51",
+      "rgb": [
+        12,
+        189,
+        81
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 40
+    },
+    {
+      "code": "H43",
+      "nameEn": "Pastel Yellow",
+      "hex": "#E7E45A",
+      "rgb": [
+        231,
+        228,
+        90
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 41
+    },
+    {
+      "code": "H44",
+      "nameEn": "Pastel Red",
+      "hex": "#F96160",
+      "rgb": [
+        249,
+        97,
+        96
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 42
+    },
+    {
+      "code": "H45",
+      "nameEn": "Pastel Purple",
+      "hex": "#8E69CD",
+      "rgb": [
+        142,
+        105,
+        205
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 43
+    },
+    {
+      "code": "H46",
+      "nameEn": "Pastel Blue",
+      "hex": "#51AEE4",
+      "rgb": [
+        81,
+        174,
+        228
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 44
+    },
+    {
+      "code": "H47",
+      "nameEn": "Pastel Green",
+      "hex": "#80DF96",
+      "rgb": [
+        128,
+        223,
+        150
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 45
+    },
+    {
+      "code": "H48",
+      "nameEn": "Pastel Pink",
+      "hex": "#D67AD1",
+      "rgb": [
+        214,
+        122,
+        209
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 46
+    },
+    {
+      "code": "H49",
+      "nameEn": "Azure",
+      "hex": "#0FACD1",
+      "rgb": [
+        15,
+        172,
+        209
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 47
+    },
+    {
+      "code": "H60",
+      "nameEn": "Teddybear Brown",
+      "hex": "#F0981E",
+      "rgb": [
+        240,
+        152,
+        30
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 48
+    },
+    {
+      "code": "H70",
+      "nameEn": "Light Grey",
+      "hex": "#A5B3C0",
+      "rgb": [
+        165,
+        179,
+        192
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 49
+    },
+    {
+      "code": "H71",
+      "nameEn": "Dark Grey",
+      "hex": "#445059",
+      "rgb": [
+        68,
+        80,
+        89
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 50
+    },
+    {
+      "code": "H75",
+      "nameEn": "Tan",
+      "hex": "#B78C6D",
+      "rgb": [
+        183,
+        140,
+        109
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 51
+    },
+    {
+      "code": "H76",
+      "nameEn": "Nougat",
+      "hex": "#8A5937",
+      "rgb": [
+        138,
+        89,
+        55
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 52
+    },
+    {
+      "code": "H77",
+      "nameEn": "Cloudy White",
+      "hex": "#CED1C8",
+      "rgb": [
+        206,
+        209,
+        200
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 53
+    },
+    {
+      "code": "H78",
+      "nameEn": "Light Peach",
+      "hex": "#F7C1AA",
+      "rgb": [
+        247,
+        193,
+        170
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 54
+    },
+    {
+      "code": "H79",
+      "nameEn": "Apricot",
+      "hex": "#F87633",
+      "rgb": [
+        248,
+        118,
+        51
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 55
+    },
+    {
+      "code": "H82",
+      "nameEn": "Plum",
+      "hex": "#91175A",
+      "rgb": [
+        145,
+        23,
+        90
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 56
+    },
+    {
+      "code": "H83",
+      "nameEn": "Petrol Blue",
+      "hex": "#037A9F",
+      "rgb": [
+        3,
+        122,
+        159
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 57
+    },
+    {
+      "code": "H84",
+      "nameEn": "Olive Green",
+      "hex": "#687836",
+      "rgb": [
+        104,
+        120,
+        54
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 58
+    },
+    {
+      "code": "H95",
+      "nameEn": "Pastel Rose",
+      "hex": "#DD9BA3",
+      "rgb": [
+        221,
+        155,
+        163
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 59
+    },
+    {
+      "code": "H96",
+      "nameEn": "Pastel Lilac",
+      "hex": "#B491AD",
+      "rgb": [
+        180,
+        145,
+        173
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 60
+    },
+    {
+      "code": "H97",
+      "nameEn": "Pastel Ice Blue",
+      "hex": "#8AAFC2",
+      "rgb": [
+        138,
+        175,
+        194
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 61
+    },
+    {
+      "code": "H98",
+      "nameEn": "Pastel Mint",
+      "hex": "#94CCA4",
+      "rgb": [
+        148,
+        204,
+        164
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 62
+    },
+    {
+      "code": "H15",
+      "nameEn": "Transparent Blue",
+      "hex": "#487ED5",
+      "rgb": [
+        72,
+        126,
+        213
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 63
+    },
+    {
+      "code": "H55",
+      "nameEn": "Green (Glow in the Dark)",
+      "hex": "#FAF8ED",
+      "rgb": [
+        250,
+        248,
+        237
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 64
+    },
+    {
+      "code": "H56",
+      "nameEn": "Red (Glow in the Dark)",
+      "hex": "#EDBF9F",
+      "rgb": [
+        237,
+        191,
+        159
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 65
+    },
+    {
+      "code": "H57",
+      "nameEn": "Blue (Glow in the Dark)",
+      "hex": "#C4D0E3",
+      "rgb": [
+        196,
+        208,
+        227
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 66
+    },
+    {
+      "code": "H61",
+      "nameEn": "Gold",
+      "hex": "#D99350",
+      "rgb": [
+        217,
+        147,
+        80
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 67
+    },
+    {
+      "code": "H62",
+      "nameEn": "Silver",
+      "hex": "#48474A",
+      "rgb": [
+        72,
+        71,
+        74
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 68
+    },
+    {
+      "code": "H63",
+      "nameEn": "Bronze",
+      "hex": "#42312F",
+      "rgb": [
+        66,
+        49,
+        47
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 69
+    },
+    {
+      "code": "H64",
+      "nameEn": "Pearl",
+      "hex": "#EFEBE4",
+      "rgb": [
+        239,
+        235,
+        228
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 70
+    },
+    {
+      "code": "H72",
+      "nameEn": "Translucent Pink",
+      "hex": "#F097B0",
+      "rgb": [
+        240,
+        151,
+        176
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 71
+    },
+    {
+      "code": "H73",
+      "nameEn": "Translucent Aqua",
+      "hex": "#59AEF5",
+      "rgb": [
+        89,
+        174,
+        245
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 72
+    },
+    {
+      "code": "H74",
+      "nameEn": "Translucent Lilac",
+      "hex": "#5B55BD",
+      "rgb": [
+        91,
+        85,
+        189
+      ],
+      "kind": "special",
+      "family": "H",
+      "sortKey": 73
+    },
+    {
+      "code": "H101",
+      "nameEn": "Eucalyptus",
+      "hex": "#A9C39B",
+      "rgb": [
+        169,
+        195,
+        155
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 74
+    },
+    {
+      "code": "H102",
+      "nameEn": "Forest Green",
+      "hex": "#356B2D",
+      "rgb": [
+        53,
+        107,
+        45
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 75
+    },
+    {
+      "code": "H103",
+      "nameEn": "Light Yellow",
+      "hex": "#FFE660",
+      "rgb": [
+        255,
+        230,
+        96
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 76
+    },
+    {
+      "code": "H104",
+      "nameEn": "Lime",
+      "hex": "#BCD122",
+      "rgb": [
+        188,
+        209,
+        34
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 77
+    },
+    {
+      "code": "H105",
+      "nameEn": "Light Apricot",
+      "hex": "#FFAC78",
+      "rgb": [
+        255,
+        172,
+        120
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 78
+    },
+    {
+      "code": "H106",
+      "nameEn": "Light Lavender",
+      "hex": "#CCC5ED",
+      "rgb": [
+        204,
+        197,
+        237
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 79
+    },
+    {
+      "code": "H107",
+      "nameEn": "Lavender",
+      "hex": "#6A87C1",
+      "rgb": [
+        106,
+        135,
+        193
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 80
+    },
+    {
+      "code": "H108",
+      "nameEn": "Aubergine",
+      "hex": "#2A2536",
+      "rgb": [
+        42,
+        37,
+        54
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 81
+    },
+    {
+      "code": "H109",
+      "nameEn": "Cloudy Grey",
+      "hex": "#8A847F",
+      "rgb": [
+        138,
+        132,
+        127
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 82
+    },
+    {
+      "code": "H110",
+      "nameEn": "Matcha",
+      "hex": "#838956",
+      "rgb": [
+        131,
+        137,
+        86
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 83
+    },
+    {
+      "code": "H111",
+      "nameEn": "Dark Blush",
+      "hex": "#835854",
+      "rgb": [
+        131,
+        88,
+        84
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 84
+    },
+    {
+      "code": "H112",
+      "nameEn": "Blush",
+      "hex": "#AD8A82",
+      "rgb": [
+        173,
+        138,
+        130
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 85
+    },
+    {
+      "code": "H113",
+      "nameEn": "Aqua",
+      "hex": "#5F887B",
+      "rgb": [
+        95,
+        136,
+        123
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 86
+    },
+    {
+      "code": "H114",
+      "nameEn": "Cherry Red",
+      "hex": "#9A2C31",
+      "rgb": [
+        154,
+        44,
+        49
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 87
+    },
+    {
+      "code": "H115",
+      "nameEn": "Bright Green",
+      "hex": "#6E975F",
+      "rgb": [
+        110,
+        151,
+        95
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 88
+    },
+    {
+      "code": "H116",
+      "nameEn": "Midnight Blue",
+      "hex": "#222838",
+      "rgb": [
+        34,
+        40,
+        56
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 89
+    },
+    {
+      "code": "H117",
+      "nameEn": "Taupe Grey",
+      "hex": "#777169",
+      "rgb": [
+        119,
+        113,
+        105
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 90
+    },
+    {
+      "code": "H118",
+      "nameEn": "Maroon Red",
+      "hex": "#612932",
+      "rgb": [
+        97,
+        41,
+        50
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 91
+    },
+    {
+      "code": "H119",
+      "nameEn": "Sky Blue",
+      "hex": "#4167B4",
+      "rgb": [
+        65,
+        103,
+        180
+      ],
+      "kind": "solid",
+      "family": "H",
+      "sortKey": 92
+    }
+  ]
+}
