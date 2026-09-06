@@ -11,6 +11,7 @@
 | 1. 架构设计 + 算法伪代码 + 色号表设计 | DeepSeek Harness（本仓库） | ✅ 文档已产出并确认（docs/00–05） |
 | 2. 按 spec 实现可运行前端第一版 | Codex | ✅ 已完成 — 见 [`docs/06-阶段2自测报告.md`](docs/06-阶段2自测报告.md)；色表范围 = 仅 MARD-291 |
 | 3. 代码审查 + 修 bug + 优化 + 部署文档 | Claude Code | ✅ 已完成 — 见 [`docs/09-阶段3审查报告.md`](docs/09-阶段3审查报告.md)；部署见 [`docs/08-部署指南.md`](docs/08-部署指南.md) |
+| v1.1 拼豆工艺后处理（A 智能限色 / B 暗部简化 / C 噪点清理 / D 自动描边 / E 目标模式 / F Perler+Hama 色板 / G 底板 116） | DeepSeek 设计 → Codex 实现 → Claude 复核 | 🔵 设计文档就绪（docs/01 §8–10 · 02 §9–11 · 03 §9 · 04 §7 · 10），**待 Codex 实现** |
 
 **流水线纪律**：阶段 2 的产物必须跑得起来并按 `docs/01` 验收清单自测；阶段 3 必须真的启动项目复现问题，禁止只看代码。
 
@@ -28,6 +29,7 @@
 | [`docs/07-阶段3交接包-ClaudeCode.md`](docs/07-阶段3交接包-ClaudeCode.md) | 阶段 3 任务书（Claude Code）：复核清单、修复纪律、产出物约定 |
 | [`docs/08-部署指南.md`](docs/08-部署指南.md) | GitHub Pages / Vercel / Nginx 三种部署方式 + base path 坑 + 系统要求 + 常见问题 |
 | [`docs/09-阶段3审查报告.md`](docs/09-阶段3审查报告.md) | 阶段 3 终审：运行复现、DoD/T1–T12 结果、代码审查结论、P0/P1 修复与 P2 清单 |
+| [`docs/10-v1.1交接包-Codex.md`](docs/10-v1.1交接包-Codex.md) | v1.1 任务书：工艺后处理 A–G、人工验收基准、交接提示词 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
 
 阶段 1 验收标准（已确认，供阶段 3 复核）：
