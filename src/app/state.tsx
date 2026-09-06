@@ -34,16 +34,23 @@ export type AppAction =
   | { type: 'restore'; state: Partial<AppState> };
 
 export const defaultSettings: UiSettings = {
+  targetMode: 'cartoon',
   gridMode: 'long-edge',
   longEdge: 58,
   boardSide: 29,
   paletteId: 'mard-291',
   bg: 'white',
   mode: 'average',
-  maxColorsEnabled: false,
+  maxColorsEnabled: true,
   maxColors: 24,
   dither: 'none',
   adjust: { brightness: 0, contrast: 0, saturation: 0 },
+  speckleClean: true,
+  speckleMax: 2,
+  speckleDeltaE: 30,
+  shadowSimplify: 1,
+  outline: true,
+  outlineTau: 0.18,
   showCodes: true,
   showGridLines: true
 };

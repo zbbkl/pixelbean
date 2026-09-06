@@ -2,11 +2,51 @@ export type PaletteId = string;
 export type BgMode = 'white' | 'black';
 export type DownsampleMode = 'average' | 'dominant';
 export type DitherMode = 'none' | 'floyd-steinberg';
+export type GridMode = 'long-edge' | 'square-board';
+export type TargetMode = 'photo' | 'cartoon' | 'lineart' | 'pixel' | 'custom';
 
 export interface AdjustOptions {
   brightness: number;
   contrast: number;
   saturation: number;
+}
+
+export interface PostOptions {
+  speckleClean: boolean;
+  speckleMax: number;
+  speckleDeltaE: number;
+  shadowSimplify: 0 | 1 | 2;
+  maxColors: number | null;
+  outline: boolean;
+  outlineTau: number;
+}
+
+export interface AdjustUi {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+}
+
+export interface UiSettings {
+  targetMode: TargetMode;
+  gridMode: GridMode;
+  longEdge: number;
+  boardSide: number;
+  paletteId: PaletteId;
+  bg: BgMode;
+  mode: DownsampleMode;
+  maxColorsEnabled: boolean;
+  maxColors: number;
+  dither: DitherMode;
+  adjust: AdjustUi;
+  speckleClean: boolean;
+  speckleMax: number;
+  speckleDeltaE: number;
+  shadowSimplify: 0 | 1 | 2;
+  outline: boolean;
+  outlineTau: number;
+  showCodes: boolean;
+  showGridLines: boolean;
 }
 
 /**
