@@ -62,6 +62,7 @@ export interface ConvertOptions {
   maxColors: number | null;
   dither: DitherMode;
   adjust?: AdjustOptions;
+  post?: PostOptions;
   contain?: {
     contentWidth: number;
     contentHeight: number;

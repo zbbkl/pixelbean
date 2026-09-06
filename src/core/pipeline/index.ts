@@ -5,6 +5,7 @@ import { ditherFloydSteinberg } from './dither';
 import { downsample } from './downsample';
 import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
+import { isPostActive, runPostPipeline } from '../post';
 
 export function convertPipeline(
   source: CellImage,
@@ -28,6 +29,11 @@ export function convertPipeline(
     options.bg,
     options.adjust
   );
+  const post = options.post;
+  const postActive = isPostActive(post);
+  const ditherRequested = options.dither === 'floyd-steinberg';
+  const ditherPostConflict = ditherRequested && postActive && post !== undefined &&
+    (post.shadowSimplify > 0 || post.maxColors !== null);
   const cellImage: CellImage = {
     width: contentWidth,
     height: contentHeight,
@@ -35,18 +41,21 @@ export function convertPipeline(
   };
 
   let pattern: Pattern;
-  if (options.dither === 'floyd-steinberg' && options.maxColors === null) {
+  if (ditherRequested && !ditherPostConflict) {
     pattern = ditherFloydSteinberg(cellImage, palette, contentOptions);
   } else {
     const matched = matchGridDetailed(cellImage, palette, contentOptions);
     pattern = matched.pattern;
-    if (options.maxColors !== null) {
+    if (options.maxColors !== null && !postActive) {
       pattern = limitColors(pattern, palette, options.maxColors, matched.details);
     }
   }
 
   if (options.contain) {
     pattern = placeContain(pattern, options.width, options.height);
+  }
+  if (postActive && post) {
+    pattern = runPostPipeline(pattern, palette, post);
   }
   return pattern;
 }
@@ -57,3 +66,4 @@ export * from './match';
 export * from './dither';
 export * from './colorLimit';
 export * from './contain';
+export * from '../post';
