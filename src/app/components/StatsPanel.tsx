@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import type { Pattern } from '../../types';
 import type { LoadedPalette } from '../../core/palette/types';
 import { countByColor } from '../../core/pattern';
@@ -9,9 +10,10 @@ interface Props {
   ownedCodes: string[];
   onToggleOwned: (code: string) => void;
   onCopy: () => void;
+  exportControls?: ReactNode;
 }
 
-export function StatsPanel({ pattern, palette, ownedCodes, onToggleOwned, onCopy }: Props) {
+export function StatsPanel({ pattern, palette, ownedCodes, onToggleOwned, onCopy, exportControls }: Props) {
   const stats = useMemo(() => (pattern && palette ? countByColor(pattern, palette) : []), [pattern, palette]);
   const ownedSet = useMemo(() => new Set(ownedCodes), [ownedCodes]);
   const total = stats.reduce((sum, stat) => sum + stat.count, 0);
@@ -34,6 +36,7 @@ export function StatsPanel({ pattern, palette, ownedCodes, onToggleOwned, onCopy
           复制清单
         </button>
       </div>
+      {exportControls && <div className="stats-export-inline">{exportControls}</div>}
       {stats.length ? (
         <div className="stats-table-wrap">
           <table className="stats-table">

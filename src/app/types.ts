@@ -21,3 +21,5 @@ export interface HoverCell {
   x: number;
   y: number;
 }
+
+export type MobileSection = 'params' | 'preview' | 'stats';

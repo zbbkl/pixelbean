@@ -1,0 +1,113 @@
+/* 移动端适配：在 app.css/workspace.css 之后加载，仅覆盖布局与交互。 */
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 0;
+  overflow: hidden;
+}
+
+button,
+.drop-target,
+.switch-field,
+.sample-chip {
+  touch-action: manipulation;
+}
+
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.tablet-panel-toggle {
+  display: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.stats-export-inline,
+.preview-mobile-controls {
+  display: none;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+.fullscreen-viewer {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .app-body {
+    grid-template-columns: 330px minmax(0, 1fr);
+  }
+
+  .left-rail {
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  body,
+  .app-shell {
+    overflow: hidden;
+  }
+
+  .app-header {
+    height: 60px;
+    flex: 0 0 60px;
+    min-height: 0;
+  }
+
+  .app-body {
+    display: grid;
+    grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .left-rail {
+    overflow-y: auto;
+    border-right: 1px solid #d9e0e6;
+    max-width: 320px;
+  }
+
+  .tablet-panel-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tablet-panel-collapsed .app-body {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  .tablet-panel-collapsed .left-rail {
+    display: none;
+  }
+
+  .center-column {
+    min-height: 0;
+    height: auto;
+  }
+
+  input[type='number'],
+  select,
+  textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+}
+

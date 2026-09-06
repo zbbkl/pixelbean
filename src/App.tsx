@@ -5,6 +5,7 @@ import { countByColor } from './core/pattern';
 import { loadPalette } from './core/palette/loader';
 import type { PaletteSet } from './core/palette/types';
 import { ExportBar } from './app/components/ExportBar';
+import { MobileNav } from './app/components/MobileNav';
 import { PaletteImport } from './app/components/PaletteImport';
 import { ParamPanel } from './app/components/ParamPanel';
 import { PreviewCanvas } from './app/components/PreviewCanvas';
@@ -20,6 +21,7 @@ import { exportCsv } from './export/csv';
 import { copyStats } from './export/stats';
 import { printSheet } from './export/print';
 import type { ConvertError, ConvertResult } from './worker/protocol';
+import type { MobileSection } from './app/types';
 
 const builtin = builtinPaletteSets as unknown as Record<string, PaletteSet>;
 
@@ -38,6 +40,9 @@ export default function App() {
   const seqRef = useRef(0);
   const restoredRef = useRef(false);
   const [workerReady, setWorkerReady] = useState(false);
+  const [mobileSection, setMobileSection] = useState<MobileSection>('preview');
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   const { source, settings } = state;
   const currentPalette = state.palettes[settings.paletteId];
@@ -232,7 +237,7 @@ export default function App() {
   const customCount = Object.keys(state.palettes).filter((id) => id !== 'mard-291').length;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell mobile-section-${mobileSection} ${panelOpen ? '' : 'tablet-panel-collapsed'}`}>
       <header className="app-header">
         <div className="brand-mark">
           <span className="brand-bean" />
@@ -242,6 +247,13 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
+          <button
+            className="button ghost tablet-panel-toggle"
+            aria-expanded={panelOpen}
+            onClick={() => setPanelOpen((open) => !open)}
+          >
+            参数
+          </button>
           {state.loading && <span className="status-pill">转换中…</span>}
           <button className="button ghost" onClick={cancel} disabled={!state.loading}>
             取消
@@ -290,6 +302,7 @@ export default function App() {
             view={state.view}
             onHover={(hover) => dispatch({ type: 'hover', hover })}
             onView={(patch) => dispatch({ type: 'view', patch })}
+            onFullscreen={() => setViewerOpen(true)}
           />
           <StatsPanel
             pattern={state.pattern}
@@ -297,9 +310,38 @@ export default function App() {
             ownedCodes={state.ownedCodes}
             onToggleOwned={(code) => dispatch({ type: 'toggleOwned', code })}
             onCopy={copyText}
+            exportControls={
+              <ExportBar
+                disabled={!state.pattern || !loadedPalette}
+                onPng={pngExport}
+                onCsv={csvExport}
+                onPrint={printPattern}
+              />
+            }
           />
         </main>
       </div>
+      {viewerOpen && state.pattern && loadedPalette && (
+        <div className="fullscreen-viewer" role="dialog" aria-modal="true" aria-label="全屏图纸">
+          <PreviewCanvas
+            pattern={state.pattern}
+            palette={loadedPalette}
+            source={source}
+            loading={state.loading}
+            fullscreen
+            showCodes={settings.showCodes}
+            showGridLines={settings.showGridLines}
+            onToggleCodes={(value) => patchUi({ showCodes: value })}
+            onToggleGrid={(value) => patchUi({ showGridLines: value })}
+            hover={state.hover}
+            view={state.view}
+            onHover={(hover) => dispatch({ type: 'hover', hover })}
+            onView={(patch) => dispatch({ type: 'view', patch })}
+            onCloseFullscreen={() => setViewerOpen(false)}
+          />
+        </div>
+      )}
+      <MobileNav active={mobileSection} onChange={setMobileSection} />
       <div id="print-root" className="print-root" />
     </div>
   );
