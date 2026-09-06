@@ -1,4 +1,4 @@
-﻿# PixelBean · 拼豆图纸生成器
+# PixelBean · 拼豆图纸生成器
 
 把任意图片转换为**拼豆像素图纸**：每个像素格对应一颗豆子，标注该用哪个品牌色号体系下的哪颗豆，并统计每种色号需要多少颗（购物清单）。纯前端、本地优先，支持打印图纸与 PNG 导出。
 
@@ -29,8 +29,9 @@
 | [`docs/07-阶段3交接包-ClaudeCode.md`](docs/07-阶段3交接包-ClaudeCode.md) | 阶段 3 任务书（Claude Code）：复核清单、修复纪律、产出物约定 |
 | [`docs/08-部署指南.md`](docs/08-部署指南.md) | GitHub Pages / Vercel / Nginx 三种部署方式 + base path 坑 + 系统要求 + 常见问题 |
 | [`docs/09-阶段3审查报告.md`](docs/09-阶段3审查报告.md) | 阶段 3 终审：运行复现、DoD/T1–T12 结果、代码审查结论、P0/P1 修复与 P2 清单 |
-| [`docs/10-v1.1交接包-Codex.md`](docs/10-v1.1交接包-Codex.md)
-| [docs/14-移动端适配规格与任务书-Codex.md](docs/14-移动端适配规格与任务书-Codex.md) | 移动端四档断点版式、触控目标/手势、微信 webview、验收矩阵 | | v1.1 任务书：工艺后处理 A–G、人工验收基准、交接提示词 |
+| [`docs/10-v1.1交接包-Codex.md`](docs/10-v1.1交接包-Codex.md) | v1.1 任务书：工艺后处理 A–G、人工验收基准、交接提示词 |
+| [`docs/12-v1.1审查任务书-ClaudeCode.md`](docs/12-v1.1审查任务书-ClaudeCode.md) | v1.1 终审任务书（Claude Code）：复核矩阵、红线核查、产出约定 |
+| [`docs/14-移动端适配规格与任务书-Codex.md`](docs/14-移动端适配规格与任务书-Codex.md) | 移动端四档断点版式、触控目标/手势、微信 webview、验收矩阵 |
 | [`docs/11-阶段v1.1自测报告.md`](docs/11-阶段v1.1自测报告.md) | Codex v1.1 实现与 T13–T20/DoD 自测记录 |
 | [`docs/13-阶段v1.1审查报告.md`](docs/13-阶段v1.1审查报告.md) | Claude Code v1.1 终审：环境复现、T13–T20/DoD 复核、算法逐行对照、P0/P1 修复、残余风险 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
