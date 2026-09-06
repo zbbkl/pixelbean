@@ -1,0 +1,29 @@
+# dependencies / build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# local env & logs
+*.local
+*.log
+.env
+.env.*
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.idea/
+.vscode/
+*.swp
+
+# temp exports
+/tmp/
+*.tmp
+
+# local tooling (gh cli etc., never commit)
+.tools/

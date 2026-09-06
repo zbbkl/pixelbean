@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://pixelbean.local/palette.schema.json",
+  "title": "PixelBean PaletteSet",
+  "description": "拼豆色号表数据契约：一个文件 = 一个品牌×尺寸×色号体系的自包含色板。hex 均为工程近似色，图纸以 code 为准。",
+  "type": "object",
+  "required": ["schemaVersion", "id", "label", "brand", "standard", "quality", "source", "license", "colors"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "稳定 slug，运行期引用键，跨版本不变"
+    },
+    "label": { "type": "string", "description": "人类可读名称，如 'MARD 291（店家通用）'" },
+    "brand": { "type": "string", "description": "品牌名，如 MARD / Artkal / Perler / Hama" },
+    "standard": { "type": "string", "description": "色号体系名或子集，如 '291' / 'M-Mini 221'" },
+    "beadSizeMm": { "type": "number", "description": "常见豆径（mm）；2.6 表示 mini" },
+    "beadType": { "enum": ["round", "square", "mix"], "description": "可选" },
+    "quality": {
+      "enum": ["official", "community-verified", "community-legacy"],
+      "description": "official=官方公开表转录；community-verified=≥2 个独立社区源交叉一致；community-legacy=单一老社区源"
+    },
+    "source": { "type": "string", "description": "数据来源说明（项目名 + 许可证）" },
+    "license": { "type": "string", "description": "该数据集的许可证，如 MIT" },
+    "licenseNote": { "type": "string", "description": "版权声明/致谢要求等" },
+    "codeStyle": {
+      "type": "object",
+      "description": "展示变换规则：只影响 UI/图纸文字，不影响匹配与统计",
+      "properties": {
+        "stripLeadingBrandChar": { "type": "boolean", "description": "如 Artkal M-Mini 的 MA1 → A1" },
+        "zeroPad": { "type": "integer", "minimum": 0, "description": "MARD A1 → A01（数字部分补零位数）" }
+      }
+    },
+    "notes": { "type": "string", "description": "给用户的说明，如 'hex 与实物有色差，以 code 为准'" },
+    "colors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/paletteColor" }
+    }
+  },
+  "definitions": {
+    "paletteColor": {
+      "type": "object",
+      "required": ["code", "kind"],
+      "additionalProperties": true,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "官方/店家色号，权威标识，同集内必须唯一"
+        },
+        "name": { "type": "string", "description": "中文名（可选）" },
+        "nameEn": { "type": "string", "description": "英文名（可选）" },
+        "hex": {
+          "anyOf": [
+            { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+            { "type": "null" }
+          ],
+          "description": "工程近似色；transparent 类可为 null"
+        },
+        "rgb": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "与 hex 等价的 0-255 数组；hex/rgb 至少其一"
+        },
+        "kind": {
+          "enum": ["solid", "special", "transparent"],
+          "description": "solid=参与最近邻匹配；special=夜光/珍珠/金属等默认不参与；transparent=不参与"
+        },
+        "family": { "type": "string", "description": "系列分组，用于按色系筛选" },
+        "sortKey": { "type": "number", "description": "可选，官方编号顺序排序键" }
+      }
+    }
+  }
+}
