@@ -10,7 +10,7 @@
 |---|---|---|
 | 1. 架构设计 + 算法伪代码 + 色号表设计 | DeepSeek Harness（本仓库） | ✅ 文档已产出并确认（docs/00–05） |
 | 2. 按 spec 实现可运行前端第一版 | Codex | ✅ 已完成 — 见 [`docs/06-阶段2自测报告.md`](docs/06-阶段2自测报告.md)；色表范围 = 仅 MARD-291 |
-| 3. 代码审查 + 修 bug + 优化 + 部署文档 | Claude Code | ⚪ 待开始 |
+| 3. 代码审查 + 修 bug + 优化 + 部署文档 | Claude Code | 🔵 待开始 — 任务书 [`docs/07-阶段3交接包-ClaudeCode.md`](docs/07-阶段3交接包-ClaudeCode.md)；产出约定：docs/08 部署指南、docs/09 审查报告 |
 
 **流水线纪律**：阶段 2 的产物必须跑得起来并按 `docs/01` 验收清单自测；阶段 3 必须真的启动项目复现问题，禁止只看代码。
 
@@ -25,6 +25,7 @@
 | [`docs/04-色号表数据设计.md`](docs/04-色号表数据设计.md) | 色表 JSON 数据格式、Schema、内置品牌清单与数据来源/许可证 |
 | [`docs/05-交接与审查.md`](docs/05-交接与审查.md) | 阶段 2 实施顺序（Codex）+ 阶段 3 审查清单（Claude Code）+ 交接提示词模板 |
 | [`docs/06-阶段2自测报告.md`](docs/06-阶段2自测报告.md) | Codex 按 docs/01 DoD/T1–T12 的自测记录与偏差说明 |
+| [`docs/07-阶段3交接包-ClaudeCode.md`](docs/07-阶段3交接包-ClaudeCode.md) | 阶段 3 任务书（Claude Code）：复核清单、修复纪律、产出物约定 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
 
 阶段 1 验收标准（已确认，供阶段 3 复核）：
