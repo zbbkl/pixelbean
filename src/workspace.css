@@ -6,6 +6,47 @@
   background: #e7edf2;
 }
 
+.field-label-inline {
+  font-size: 12px;
+  color: #485866;
+  min-width: 64px;
+}
+
+.field-inline {
+  grid-template-columns: 28px minmax(0, 120px);
+  margin: 0;
+}
+
+.field-hint {
+  margin-top: 8px;
+  color: #7a6550;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.mini-chip {
+  min-height: 26px;
+  min-width: 34px;
+  border: 1px solid #c6d1d9;
+  border-radius: 5px;
+  background: #ffffff;
+  padding: 0 7px;
+  font-size: 12px;
+  color: #344452;
+}
+
+.mini-chip.active {
+  border-color: #0f6f9c;
+  background: #e7f4fb;
+  color: #0c5f86;
+  font-weight: 700;
+}
+
+.outline-hint {
+  color: #7b4a16;
+  font-weight: 650;
+}
+
 .preview-pane {
   flex: 1 1 0;
   min-height: 0;
@@ -317,4 +358,3 @@
     padding: 8px 10px;
   }
 }
-

@@ -1,4 +1,4 @@
-import type { ConvertOptions } from '../types';
+import type { ConvertOptions, PostOptions } from '../types';
 import { deriveContainContent, deriveLongEdgeGrid } from '../core/pipeline/geometry';
 import type { SourceImage, UiSettings } from './types';
 
@@ -12,8 +12,24 @@ export interface ResolvedRequest {
   contentHeight: number;
 }
 
+export function postFromSettings(settings: UiSettings): PostOptions | undefined {
+  const maxColors = settings.maxColorsEnabled ? settings.maxColors : null;
+  const post: PostOptions = {
+    speckleClean: settings.speckleClean,
+    speckleMax: settings.speckleMax,
+    speckleDeltaE: settings.speckleDeltaE,
+    shadowSimplify: settings.shadowSimplify,
+    maxColors,
+    outline: settings.outline,
+    outlineTau: settings.outlineTau
+  };
+  const active = post.speckleClean || post.shadowSimplify > 0 || maxColors !== null || post.outline;
+  return active ? post : undefined;
+}
+
 export function resolveRequest(source: SourceImage, settings: UiSettings): ResolvedRequest {
   const { gridMode, longEdge, boardSide, maxColorsEnabled, maxColors } = settings;
+  const post = postFromSettings(settings);
   if (gridMode === 'square-board') {
     const content = deriveContainContent(source.naturalWidth, source.naturalHeight, boardSide, boardSide);
     return {
@@ -28,6 +44,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
         maxColors: maxColorsEnabled ? maxColors : null,
         dither: settings.dither,
         adjust: settings.adjust,
+        post,
         contain: {
           contentWidth: content.width,
           contentHeight: content.height
@@ -47,7 +64,8 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
       mode: settings.mode,
       maxColors: maxColorsEnabled ? maxColors : null,
       dither: settings.dither,
-      adjust: settings.adjust
+      adjust: settings.adjust,
+      post
     }
   };
 }

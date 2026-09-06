@@ -17,6 +17,8 @@ export function StatsPanel({ pattern, palette, ownedCodes, onToggleOwned, onCopy
   const total = stats.reduce((sum, stat) => sum + stat.count, 0);
   const totalRemaining = stats.reduce((sum, stat) => sum + (ownedSet.has(stat.code) ? 0 : stat.count), 0);
   const needKinds = stats.filter((stat) => !ownedSet.has(stat.code)).length;
+  const post = pattern?.options.post;
+  const outlineAdded = pattern && post?.outline && post.maxColors !== null && stats.length > post.maxColors;
 
   return (
     <section className="stats-pane">
@@ -26,6 +28,7 @@ export function StatsPanel({ pattern, palette, ownedCodes, onToggleOwned, onCopy
           <span>总 {total} 颗</span>
           <span>{needKinds} 色待购</span>
           <span>待购 {totalRemaining} 颗</span>
+          {outlineAdded && <span className="outline-hint">实际 {stats.length} 色 = 限色 {post?.maxColors} + 轮廓 1</span>}
         </div>
         <button className="tool-button" onClick={onCopy} disabled={!pattern}>
           复制清单

@@ -1,6 +1,7 @@
 import { boardPresets, longEdgePresets } from '../boardPresets';
 import type { UiSettings } from '../types';
 import type { PaletteSet } from '../../core/palette/types';
+import { applyMode, modeOptions, type NonCustomTargetMode } from '../../core/post/modePresets';
 
 interface Props {
   settings: UiSettings;
@@ -40,8 +41,24 @@ function NumberField({
 
 export function ParamPanel({ settings, palettes, onPatch }: Props) {
   const limitOn = settings.maxColorsEnabled;
+  const ditherBlocked = limitOn || settings.shadowSimplify > 0;
   return (
     <div className="param-panel">
+      <section className="panel-block">
+        <div className="block-title">0 目标模式</div>
+        <select
+          value={settings.targetMode}
+          onChange={(event) => {
+            const id = event.target.value as NonCustomTargetMode | 'custom';
+            if (id !== 'custom') onPatch(applyMode(id, settings));
+          }}
+        >
+          {modeOptions.map((mode) => (
+            <option key={mode.id} value={mode.id}>{mode.label}</option>
+          ))}
+          {settings.targetMode === 'custom' && <option value="custom">自定义</option>}
+        </select>
+      </section>
       <section className="panel-block">
         <div className="block-title">3 网格</div>
         <div className="segmented">
@@ -135,6 +152,18 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
           </label>
         </div>
         <div className="field-row">
+          <span className="field-label-inline">智能限色 K</span>
+          {[8, 12, 16, 24, 36].map((k) => (
+            <button
+              key={k}
+              className={`mini-chip ${limitOn && settings.maxColors === k ? 'active' : ''}`}
+              onClick={() => onPatch({ maxColorsEnabled: true, maxColors: k })}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+        <div className="field-row">
           <label className="switch-field">
             <input
               type="checkbox"
@@ -145,7 +174,7 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
           </label>
           {limitOn && (
             <NumberField
-              label="最多"
+              label="K"
               value={settings.maxColors}
               min={2}
               max={200}
@@ -157,19 +186,91 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
         <div className="segmented">
           <button
             className={settings.dither === 'none' ? 'active' : ''}
-            disabled={limitOn}
+            disabled={ditherBlocked}
             onClick={() => onPatch({ dither: 'none' })}
           >
             无抖动
           </button>
           <button
             className={settings.dither === 'floyd-steinberg' ? 'active' : ''}
-            disabled={limitOn}
+            disabled={ditherBlocked}
             onClick={() => onPatch({ dither: 'floyd-steinberg' })}
           >
             Floyd–Steinberg
           </button>
         </div>
+      </section>
+
+      <section className="panel-block">
+        <div className="block-title">4b 工艺后处理</div>
+        <label className="field">
+          <span>暗部简化</span>
+          <select
+            value={settings.shadowSimplify}
+            onChange={(event) => onPatch({ shadowSimplify: Number(event.target.value) as 0 | 1 | 2 })}
+          >
+            <option value={0}>关</option>
+            <option value={1}>标准</option>
+            <option value={2}>强</option>
+          </select>
+        </label>
+        <div className="field-row">
+          <label className="switch-field">
+            <input
+              type="checkbox"
+              checked={settings.speckleClean}
+              onChange={(event) => onPatch({ speckleClean: event.target.checked })}
+            />
+            <span>孤立噪点清理</span>
+          </label>
+        </div>
+        {settings.speckleClean && (
+          <div className="field-row">
+            <NumberField
+              label="≤N格"
+              value={settings.speckleMax}
+              min={1}
+              max={3}
+              step={1}
+              onChange={(value) => onPatch({ speckleMax: Math.max(1, Math.min(3, value)) })}
+            />
+            <label className="field field-inline">
+              <span>ΔE</span>
+              <input
+                type="range"
+                min={20}
+                max={40}
+                step={1}
+                value={settings.speckleDeltaE}
+                onChange={(event) => onPatch({ speckleDeltaE: Number(event.target.value) })}
+              />
+            </label>
+          </div>
+        )}
+        <label className="switch-field">
+          <input
+            type="checkbox"
+            checked={settings.outline}
+            onChange={(event) => onPatch({ outline: event.target.checked })}
+          />
+          <span>深色轮廓 1px</span>
+        </label>
+        {settings.outline && (
+          <label className="field">
+            <span>轮廓阈值</span>
+            <input
+              type="range"
+              min={0.1}
+              max={0.3}
+              step={0.01}
+              value={settings.outlineTau}
+              onChange={(event) => onPatch({ outlineTau: Number(event.target.value) })}
+            />
+          </label>
+        )}
+        {ditherBlocked && (
+          <div className="field-hint">限色或暗部简化开启时抖动置灰</div>
+        )}
       </section>
 
       <section className="panel-block">

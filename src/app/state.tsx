@@ -55,6 +55,12 @@ export const defaultSettings: UiSettings = {
   showGridLines: true
 };
 
+export function applyUiSettingsPatch(patch: Partial<UiSettings>): Partial<UiSettings> {
+  if (patch.targetMode !== undefined && patch.targetMode !== 'custom') return patch;
+  if ('showCodes' in patch || 'showGridLines' in patch) return patch;
+  return { ...patch, targetMode: 'custom' };
+}
+
 export function initialState(initialPalettes: Record<string, PaletteSet>): AppState {
   return {
     source: null,

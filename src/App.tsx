@@ -14,7 +14,7 @@ import { clearDraft, draftSource, loadDraft, saveDraft } from './app/draft';
 import { loadImageFile, loadSampleImage } from './app/image';
 import { MAX_CELLS, resolveRequest } from './app/options';
 import { sampleOptions } from './app/samples';
-import { useAppState } from './app/state';
+import { applyUiSettingsPatch, useAppState } from './app/state';
 import { exportPng, type PngMode } from './export/png';
 import { exportCsv } from './export/csv';
 import { copyStats } from './export/stats';
@@ -157,6 +157,12 @@ export default function App() {
     settings.mode,
     settings.maxColorsEnabled,
     settings.maxColors,
+    settings.speckleClean,
+    settings.speckleMax,
+    settings.speckleDeltaE,
+    settings.shadowSimplify,
+    settings.outline,
+    settings.outlineTau,
     settings.dither,
     settings.adjust
   ]);
@@ -173,7 +179,8 @@ export default function App() {
       seqRef.current += 1;
       dispatch({ type: 'setPalette', id: patch.paletteId });
     } else {
-      dispatch({ type: 'settings', patch });
+      const nextPatch: Partial<typeof settings> = applyUiSettingsPatch(patch);
+      dispatch({ type: 'settings', patch: nextPatch });
     }
   }
 
