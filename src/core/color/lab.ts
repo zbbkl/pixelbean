@@ -15,7 +15,7 @@ export function linearToXyz(linear: readonly [number, number, number]): [number,
 
 function labF(t: number): number {
   if (t > 216 / 24389) return Math.cbrt(t);
-  return (24389 / 27) * t + 16 / 116;
+  return ((24389 / 27) * t + 16) / 116;
 }
 
 export function xyzToLab(xyz: readonly [number, number, number]): [number, number, number] {
