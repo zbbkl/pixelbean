@@ -1,0 +1,80 @@
+# 14 · 移动端适配优化规格与任务书（Codex）
+
+> 目标：PixelBean 在**手机/平板/微信内置浏览器**里达到"可用且不破相"。范围：纯 UI/布局/交互适配，**不动算法与数据结构**（docs/02–03 契约不变，既有 108 测试必须保持全绿）。
+> 依据：2026-09 用户需求（场景：微信内置浏览器、手机浏览器、平板与极小屏）。
+> 现状：布局在 `src/workspace.css`（三段式 `grid-template-columns:330px minmax(0,1fr)`；已有 `@media (max-width:980px)`、`620px` 两档基础适配）；组件见 `src/app/components/*`；viewport meta 已有。
+
+---
+
+## 1. 目标断点与版式（4 档）
+
+| 档 | 宽度 | 版式 |
+|---|---|---|
+| 桌面 | ≥1024 | 现状三段式（左参数 330px｜右预览+底部统计导出） |
+| 平板竖/小屏 | 768–1023 | 两栏：参数面板可折叠（默认展开到 ≤320px 宽或抽屉），右侧预览+统计 |
+| 手机竖屏 | 480–767 | **单栏 + 三段切换**：顶部/底部"分段控件"在 `图片参数 / 图纸 / 用量导出` 间切换；每段全高、状态保留（切走再回来不丢参数与结果） |
+| 极小屏 | ≤480 | 同单栏，紧凑间距；保证 `document.documentElement.scrollWidth <= innerWidth`（无横向溢出） |
+
+## 2. 具体优化点（按优先级 P0/P1）
+
+### P0 必做
+1. **无横向溢出**：`body`/`.app-shell` 禁止横向滚动；所有面板 `min-width:0`；长内容用内部滚动（已有 `.canvas-scroll`/`.stats-table-wrap`）。
+2. **三段式手机导航**：新增移动端节流切换（建议顶部或底部固定条，3 个图标/文字按钮 + 激活态）；切段不重置 state（参数/图/结果各自保留）。
+3. **触控目标**：主要交互（模式下拉、上传、缩放按钮、开关、导出、K chips、预设、切换段）在移动端视口下命中尺寸 ≥40×40（推荐 44）；`select`/`input`/`textarea` 字体 **≥16px**（防 iOS 聚焦自动缩放）。
+4. **iOS/WebView 细节**：
+   - 任何固定底栏加 `padding-bottom: env(safe-area-inset-bottom)`；
+   - 高度用 `100dvh`（回退 `100vh`）；
+   - 交互控件 `touch-action: manipulation`（防双击缩放误触）；
+   - `.canvas-scroll` `overscroll-behavior: contain`；
+   - 去掉 `user-scalable=no`（可访问性），改用上述机制。
+5. **图纸查看体验**：移动端预览区全高；**缩放按钮（+/−/适应）触手可及（底部工具栏）**；单指拖拽平移（Pointer Events，现有 wheel/ctrl 逻辑之外新增 pointer 平移路径）；双击画布 = 放大一级/回适应（`preventDefault` 抑制页面缩放）；**点按单格（无拖动的 pointerup）显示该格色号信息条**（替代桌面 hover-bar）。
+6. **统计与导出**：`.stats-table-wrap` 内横向滚动（必要时表头第一列 sticky）；导出按钮组在窄屏纵向排列不换行溢出；"打印图纸"在移动端隐藏或提示用系统打印（`@media print` 不受影响）。
+7. **微信内置浏览器**：页面 HTTP 也能打开（微信 iOS 对 http 直连有时提示，文档说明属平台限制）；上传文件用原生 `<input type="file" accept="image/*">`（微信会自动走相册/拍照选择器）；避免依赖 `history`/Cookie（项目本无）。
+
+### P1（建议，视时间）
+8. 双指捏合缩放画布（PointerEvents 双指针距离→zoom）；暂不引第三方库。
+9. 平板两栏：参数面板可折叠按钮 + 窄版（≤320px）自动收成抽屉。
+10. 深色模式不强求；主题色/状态条（`<meta name="theme-color">`）可选。
+11. 极小屏（≤360）字号/间距压缩档（≥12px 正文，14px 按钮文字）。
+
+## 3. 明确不做（本轮）
+- 不改算法/色板/导出格式/接口签名（docs/02 §3、docs/03 §9 冻结）。
+- 不做 PWA/安装、不做 App 壳、不做横屏专用布局（允许但不保证）。
+- 不新增运行时依赖。
+
+## 4. 验收矩阵（Codex 必须逐档截图存档到 `.tools/mobile-shots/`，不入库）
+用 Playwright mobile 模拟（`isMobile:true, hasTouch:true`）至少测：
+- iPhone SE 375×667 · iPhone 12/13 390×844 · Android 360×740 · Android 320×568（极小） · iPad 768×1024（触控） · 桌面 1440×900（回归不破）。
+
+每条给 PASS/FAIL：
+1. 四档视口下均无横向溢出（`scrollWidth<=innerWidth`，documentElement 与 body 都查）。
+2. 手机单栏三段切换可用、状态保留（切段后参数/图纸/统计仍在）。
+3. 主要触控目标 ≥40px（用 `document.elementFromPoint` 或测量断言抽查 10 个关键控件）。
+4. 画布：可拖拽平移、缩放按钮生效、双击放大、点按显示格信息；导出 PNG 仍是全图（非截屏）。
+5. 统计表横向可滚动、不撑破布局；导出按钮在 ≤480 不溢出。
+6. 微信场景：以 Chromium 模拟近似验证；上传(示例图)与出图全流程在手机视口可完成。
+7. 桌面 1440 与现有 108 测试不回归（`npm test` 全绿、`tsc`、`build`）。
+8. 打印样式（`@media print`）不受移动改动影响（跑一次打印分页自测）。
+
+## 5. 产出
+1. 代码提交（每步 commit，UI-only，注明"移动端适配"）。
+2. `.tools/mobile-shots/` 各档截图（PASS 证据）。
+3. **`docs/15-移动端适配自测报告.md`**：验收矩阵逐条 + 关键实现说明 + 对 docs 的偏差 + 残余问题（如微信 http 提示、个别老机型）。
+4. README 更新（功能说明加"移动端适配"，索引补 14/15）。
+
+## 6. 交接提示词模板（可整段复制给 Codex）
+
+```
+你是 PixelBean 的移动端适配实现者（Codex）。
+先完整阅读 README.md 与 docs/01~12（重点 docs/14 移动端规格），并跑通现状：
+npm test(108 全绿) + npm run dev + 浏览器打开，作为改动前基线。
+工作目录 D:\workspace\PixelBean，git main 勿改写历史，新提交追加。
+
+任务：按 docs/14 §1-§3 把界面优化到手机/平板/微信 webview 可用：
+四档断点版式、手机三段式导航（状态保留）、无横向溢出、触控目标>=40px、
+画布单指平移+按钮缩放+双击放大+点按显信息、统计表内滚、iOS 安全区/dvh/
+16px 输入字号、touch-action 细节。纯 UI，禁改算法/色板/接口与 108 测试。
+按 docs/14 §4 用 Playwright 移动模拟逐档截图到 .tools/mobile-shots/ 并存 PASS/FAIL。
+产出 docs/15-移动端适配自测报告.md 并更新 README。
+先给我 30 秒计划再开工。
+```
