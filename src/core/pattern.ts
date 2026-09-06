@@ -29,6 +29,7 @@ export function countByColor(pattern: Pattern, palette?: LoadedPalette): ColorSt
   return countCells(pattern).map(({ index, count }) => ({
     index,
     code: pattern.codes[index] ?? String(index),
+    name: palette?.solids[index]?.name ?? null,
     hex: palette?.solids[index] ? hexOf(palette.solids[index]) : null,
     count,
     ratio: total > 0 ? count / total : 0

@@ -40,6 +40,7 @@ export interface Pattern {
 export interface ColorStat {
   index: number;
   code: string;
+  name: string | null;
   hex: string | null;
   count: number;
   ratio: number;

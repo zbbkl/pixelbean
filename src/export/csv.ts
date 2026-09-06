@@ -7,7 +7,7 @@ function csvCell(value: string | number): string {
 
 /** UTF-8 BOM CSV，Excel 可直接打开中文。 */
 export function exportCsv(stats: ColorStat[], ownedCodes: Set<string>): Blob {
-  const header = ['序号', '色号', 'HEX', '数量', '占比', '已有', '待购'];
+  const header = ['序号', '色号', '色名', 'HEX', '数量', '占比', '已有', '待购'];
   const lines = [header.join(',')];
   for (const [index, stat] of stats.entries()) {
     const owned = ownedCodes.has(stat.code) ? '是' : '否';
@@ -16,6 +16,7 @@ export function exportCsv(stats: ColorStat[], ownedCodes: Set<string>): Blob {
       [
         index + 1,
         stat.code,
+        stat.name ?? '',
         stat.hex ?? '',
         stat.count,
         `${(stat.ratio * 100).toFixed(2)}%`,
