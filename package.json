@@ -1,0 +1,31 @@
+{
+  "name": "pixelbean",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run generate:palettes && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate:palette": "node data/scripts/validate.mjs",
+    "fetch:sources": "node data/scripts/fetch-sources.mjs",
+    "normalize:palette": "node data/scripts/normalize-to-palette.mjs",
+    "crosscheck:palette": "node data/scripts/crosscheck.mjs",
+    "generate:palettes": "node data/scripts/build-palettes.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/node": "^22.10.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "solid-red-64x48-to-58x43",
+  "source": {
+    "width": 64,
+    "height": 48,
+    "pixel": [210, 38, 48, 255]
+  },
+  "options": {
+    "paletteId": "mard-291",
+    "width": 58,
+    "height": 43,
+    "bg": "white",
+    "mode": "average",
+    "maxColors": null,
+    "dither": "none"
+  },
+  "cellsSha256": "8937b1185c340581356a96d557768b1f3f785d94c40d29e776305c0391c1c6d8",
+  "algorithmVersion": "pixelbean-v1-ciede2000-k8"
+}

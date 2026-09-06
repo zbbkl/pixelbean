@@ -1,0 +1,52 @@
+export type PaletteId = string;
+export type BgMode = 'white' | 'black';
+export type DownsampleMode = 'average' | 'dominant';
+export type DitherMode = 'none' | 'floyd-steinberg';
+
+export interface AdjustOptions {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+}
+
+/**
+ * width/height 是图纸总网格尺寸。方形底板 contain 模式通过 contain.content* 保留
+ * 实际内容网格；无 contain 时 width/height 即内容尺寸。
+ */
+export interface ConvertOptions {
+  paletteId: PaletteId;
+  width: number;
+  height: number;
+  bg: BgMode;
+  mode: DownsampleMode;
+  maxColors: number | null;
+  dither: DitherMode;
+  adjust?: AdjustOptions;
+  contain?: {
+    contentWidth: number;
+    contentHeight: number;
+  };
+}
+
+export interface Pattern {
+  paletteId: PaletteId;
+  width: number;
+  height: number;
+  cells: Int16Array;
+  codes: string[];
+  options: ConvertOptions;
+}
+
+export interface ColorStat {
+  index: number;
+  code: string;
+  hex: string | null;
+  count: number;
+  ratio: number;
+}
+
+export interface CellImage {
+  width: number;
+  height: number;
+  data: Uint8ClampedArray;
+}

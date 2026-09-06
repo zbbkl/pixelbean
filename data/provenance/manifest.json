@@ -1,0 +1,33 @@
+{
+  "fetchedAt": "2026-09-06T00:00:00+08:00",
+  "files": [
+    {
+      "name": "jettwu-palette.ts",
+      "repo": "Jett-Wu/Perler_Beads_Generator",
+      "commit": "58988fb23cbaf3ade4a699e9e2f96a3208cd0dd3",
+      "license": "MIT",
+      "sha256": "78432162a5ff5fe2566b820e765e9ac6a0405f157fbbc9e573ffd7d09cde5bba"
+    },
+    {
+      "name": "jettwu-LICENSE",
+      "repo": "Jett-Wu/Perler_Beads_Generator",
+      "commit": "36ac52d570246ab600611a79edd2236bccb954e5",
+      "license": "MIT",
+      "sha256": "120fa4a994cf3758c39268c7a67c25822099c9d7357f1598ea323158a5a13c9a"
+    },
+    {
+      "name": "beadcolors-mard.csv",
+      "repo": "maxcleme/beadcolors",
+      "commit": "94b9999",
+      "license": "MIT",
+      "sha256": "898bbeac2c2bcf41e5293554e46545f42628fbd2cb2bc3e3c9313c889dbbe700"
+    },
+    {
+      "name": "beadcolors-LICENSE",
+      "repo": "maxcleme/beadcolors",
+      "commit": "94b9999",
+      "license": "MIT",
+      "sha256": "553cf1eeb666c13ece242a6aab13cbee3e02342b0590844856a72cf40cce052b"
+    }
+  ]
+}
