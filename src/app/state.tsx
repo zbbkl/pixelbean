@@ -40,7 +40,7 @@ export const defaultSettings: UiSettings = {
   boardSide: 52,
   paletteId: 'mard-291',
   bg: 'white',
-  mode: 'average',
+  mode: 'dominant',
   maxColorsEnabled: false,
   maxColors: 32,
   dither: 'none',

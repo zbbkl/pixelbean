@@ -8,6 +8,7 @@ import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
 import { isPostActive, runPostPipeline } from '../post';
 import { regionClean } from '../post/regionClean';
+import { mergeAdjacent } from '../post/merge';
 
 export function convertPipeline(
   source: CellImage,
@@ -71,6 +72,10 @@ export function convertPipeline(
     }
   }
 
+  const mergeEnabled = featuresEnabled && options.mode === 'dominant' && !postActive;
+  if (mergeEnabled) {
+    pattern = mergeAdjacent(pattern, palette, protect);
+  }
   if (regionCleanEnabled) {
     pattern = regionClean(pattern, palette, protect);
   }
@@ -93,3 +98,4 @@ export * from './colorLimit';
 export * from './contain';
 export * from '../post';
 export * from '../post/regionClean';
+export * from '../post/merge';

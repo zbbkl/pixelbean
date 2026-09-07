@@ -15,7 +15,7 @@ describe('modePresets', () => {
     const patch = applyMode('cartoon', defaultSettings);
     expect(patch).toMatchObject({
       targetMode: 'cartoon',
-      mode: 'average',
+      mode: 'dominant',
       maxColorsEnabled: true,
       maxColors: 24,
       shadowSimplify: 1,
@@ -39,7 +39,7 @@ describe('modePresets', () => {
     const patch = applyMode('photo', defaultSettings);
     expect(patch).toMatchObject({
       targetMode: 'photo',
-      mode: 'average',
+      mode: 'dominant',
       maxColorsEnabled: false,
       maxColors: 32,
       shadowSimplify: 0,

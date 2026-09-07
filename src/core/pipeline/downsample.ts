@@ -2,6 +2,7 @@ import type { BgMode, CellImage, DownsampleMode } from '../../types';
 import type { AdjustOptions } from '../../types';
 import { adjustRgb } from '../color/adjust';
 import { linearRgbToSrgbByte, srgbByteToLinear } from '../color/srgb';
+import { srgbRgbToLab } from '../color/lab';
 
 const WHITE: readonly [number, number, number] = [255, 255, 255];
 const BLACK: readonly [number, number, number] = [0, 0, 0];
@@ -38,6 +39,55 @@ function effectiveRgb(
 ): [number, number, number] {
   const rgb = compositeCell(r, g, b, a, bg);
   return adjust ? adjustRgb(rgb, adjust) : rgb;
+}
+
+function labFInverse(value: number): number {
+  const cube = value ** 3;
+  return cube > 216 / 24389
+    ? cube
+    : ((116 * value - 16) / 24389) * 27;
+}
+
+function labToSrgb(lab: readonly [number, number, number]): [number, number, number] {
+  const [L, a, b] = lab;
+  const fy = (L + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const x = 0.95047 * labFInverse(fx);
+  const y = labFInverse(fy);
+  const z = 1.08883 * labFInverse(fz);
+  const r = 3.2404542 * x - 1.5371385 * y - 0.4985314 * z;
+  const g = -0.969266 * x + 1.8760108 * y + 0.041556 * z;
+  const bl = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
+  return linearRgbToSrgbByte([r, g, bl]);
+}
+
+function averageRegionRgb(
+  data: Uint8ClampedArray,
+  sw: number,
+  x0: number,
+  x1: number,
+  y0: number,
+  y1: number,
+  bg: BgMode,
+  adjust?: AdjustOptions
+): [number, number, number] {
+  let linR = 0;
+  let linG = 0;
+  let linB = 0;
+  let n = 0;
+  for (let y = y0; y < y1; y += 1) {
+    const row = y * sw * 4;
+    for (let x = x0; x < x1; x += 1) {
+      const offset = row + x * 4;
+      const rgb = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+      linR += srgbByteToLinear(rgb[0]);
+      linG += srgbByteToLinear(rgb[1]);
+      linB += srgbByteToLinear(rgb[2]);
+      n += 1;
+    }
+  }
+  return linearRgbToSrgbByte([linR / n, linG / n, linB / n]);
 }
 
 export function downsampleAverage(
@@ -149,6 +199,119 @@ export function downsampleDominant(
   return out;
 }
 
+const LAB_BUCKETS_L = 10;
+const LAB_BUCKETS_A = 12;
+const LAB_BUCKETS_B = 12;
+const LAB_BUCKET_COUNT = LAB_BUCKETS_L * LAB_BUCKETS_A * LAB_BUCKETS_B;
+const LAB_NEIGHBOR_WEIGHT = [1, 0.5, 0.5] as const;
+
+function labBucket(lab: readonly [number, number, number]): number {
+  const l = Math.max(0, Math.min(LAB_BUCKETS_L - 1, Math.floor(lab[0] / 10)));
+  const a = Math.max(0, Math.min(LAB_BUCKETS_A - 1, Math.floor((lab[1] + 128) * LAB_BUCKETS_A / 256)));
+  const b = Math.max(0, Math.min(LAB_BUCKETS_B - 1, Math.floor((lab[2] + 128) * LAB_BUCKETS_B / 256)));
+  return l * LAB_BUCKETS_A * LAB_BUCKETS_B + a * LAB_BUCKETS_B + b;
+}
+
+/**
+ * v1.2-final E1：Lab 感知桶主导色 + 空桶平滑插值。
+ * dominant 语义从 linear RGB 6bit 桶升级为 L*10×a*12×b*12 桶，
+ * 稀疏区域（<4 源像素）回退 average 防抖动。
+ */
+export function downsampleDominantV2(
+  image: CellImage,
+  width: number,
+  height: number,
+  bg: BgMode,
+  adjust?: AdjustOptions,
+  opts: { emptySmooth?: number } = {}
+): Uint8ClampedArray {
+  const emptySmooth = opts.emptySmooth ?? 0.5;
+  const { width: sw, height: sh, data } = image;
+  const out = new Uint8ClampedArray(width * height * 4);
+
+  for (let gy = 0; gy < height; gy += 1) {
+    const y0 = Math.floor((gy * sh) / height);
+    const y1 = Math.max(y0 + 1, Math.floor(((gy + 1) * sh) / height));
+    for (let gx = 0; gx < width; gx += 1) {
+      const x0 = Math.floor((gx * sw) / width);
+      const x1 = Math.max(x0 + 1, Math.floor(((gx + 1) * sw) / width));
+      const counts = new Int32Array(LAB_BUCKET_COUNT);
+      const sumL = new Float64Array(LAB_BUCKET_COUNT);
+      const sumA = new Float64Array(LAB_BUCKET_COUNT);
+      const sumB = new Float64Array(LAB_BUCKET_COUNT);
+      let n = 0;
+      for (let y = y0; y < y1; y += 1) {
+        const row = y * sw * 4;
+        for (let x = x0; x < x1; x += 1) {
+          const offset = row + x * 4;
+          const rgb = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+          const lab = srgbRgbToLab(rgb);
+          const key = labBucket(lab);
+          counts[key] += 1;
+          sumL[key] += lab[0];
+          sumA[key] += lab[1];
+          sumB[key] += lab[2];
+          n += 1;
+        }
+      }
+
+      let rgb: [number, number, number];
+      if (n < 4) {
+        rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust);
+      } else {
+        let best = -1;
+        let bestScore = Number.NEGATIVE_INFINITY;
+        for (let key = 0; key < LAB_BUCKET_COUNT; key += 1) {
+          if (!counts[key]) continue;
+          let score = counts[key];
+          const baseL = Math.floor(key / (LAB_BUCKETS_A * LAB_BUCKETS_B));
+          const rest = key - baseL * LAB_BUCKETS_A * LAB_BUCKETS_B;
+          const baseA = Math.floor(rest / LAB_BUCKETS_B);
+          const baseB = rest - baseA * LAB_BUCKETS_B;
+          for (let dl = -1; dl <= 1; dl += 1) {
+            const l = baseL + dl;
+            if (l < 0 || l >= LAB_BUCKETS_L) continue;
+            for (let da = -1; da <= 1; da += 1) {
+              const a = baseA + da;
+              if (a < 0 || a >= LAB_BUCKETS_A) continue;
+              for (let db = -1; db <= 1; db += 1) {
+                const b = baseB + db;
+                if (b < 0 || b >= LAB_BUCKETS_B) continue;
+                if (!dl && !da && !db) continue;
+                const neighbor = l * LAB_BUCKETS_A * LAB_BUCKETS_B + a * LAB_BUCKETS_B + b;
+                const weight =
+                  (dl === 0 ? LAB_NEIGHBOR_WEIGHT[0] : 1 - LAB_NEIGHBOR_WEIGHT[0]) *
+                  (da === 0 ? LAB_NEIGHBOR_WEIGHT[1] : 1 - LAB_NEIGHBOR_WEIGHT[1]) *
+                  (db === 0 ? LAB_NEIGHBOR_WEIGHT[2] : 1 - LAB_NEIGHBOR_WEIGHT[2]);
+                score += emptySmooth * counts[neighbor] * weight;
+              }
+            }
+          }
+          if (score > bestScore || (score === bestScore && (best < 0 || key < best))) {
+            best = key;
+            bestScore = score;
+          }
+        }
+        if (best < 0) {
+          rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust);
+        } else {
+          rgb = labToSrgb([
+            sumL[best] / counts[best],
+            sumA[best] / counts[best],
+            sumB[best] / counts[best]
+          ]);
+        }
+      }
+      const cell = (gy * width + gx) * 4;
+      out[cell] = rgb[0];
+      out[cell + 1] = rgb[1];
+      out[cell + 2] = rgb[2];
+      out[cell + 3] = 255;
+    }
+  }
+  return out;
+}
+
 export function downsample(
   image: CellImage,
   width: number,
@@ -158,6 +321,6 @@ export function downsample(
   adjust?: AdjustOptions
 ): Uint8ClampedArray {
   return mode === 'dominant'
-    ? downsampleDominant(image, width, height, bg, adjust)
+    ? downsampleDominantV2(image, width, height, bg, adjust)
     : downsampleAverage(image, width, height, bg, adjust);
 }

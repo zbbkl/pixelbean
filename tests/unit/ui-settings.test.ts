@@ -5,6 +5,7 @@ describe('target-mode custom linkage', () => {
   it('defaults to the photo preset with the v1.2.1 profile', () => {
     expect(defaultSettings).toMatchObject({
       targetMode: 'photo',
+      mode: 'dominant',
       gridMode: 'long-edge',
       longEdge: 58,
       boardSide: 52,

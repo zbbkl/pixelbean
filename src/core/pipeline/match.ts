@@ -1,5 +1,5 @@
 import type { CellImage, ConvertOptions, Pattern } from '../../types';
-import { ciede2000, ciede76 } from '../color/ciede2000';
+import { ciede2000, ciede2000Weighted, ciede76 } from '../color/ciede2000';
 import { srgbRgbToLab } from '../color/lab';
 import type { LoadedPalette } from '../palette/types';
 
@@ -7,6 +7,9 @@ export interface MatchDetails {
   /** 每个格子的 Lab，长 = 格数 * 3。 */
   labs: Float64Array;
 }
+
+export const LOW_CHROMA = 25;
+export const WEIGHTED_K = { kL: 0.85, kC: 1.05, kH: 1.15 } as const;
 
 function makeContentOptions(options: ConvertOptions, width: number, height: number): ConvertOptions {
   return {
@@ -56,6 +59,26 @@ export function nearestPaletteIndex(lab: readonly [number, number, number], pale
   return best;
 }
 
+/** E5：低彩度/浅色格走加权 CIEDE2000，强化色相与彩度约束。 */
+export function nearestPaletteIndexWeighted(
+  lab: readonly [number, number, number],
+  palette: LoadedPalette,
+  weights = WEIGHTED_K
+): number {
+  const candidates = nearestPaletteCandidates(lab, palette.labs, palette.solids.length);
+  let best = candidates[0];
+  let bestDelta = Number.POSITIVE_INFINITY;
+  for (const index of candidates) {
+    const lab2 = palette.labs.subarray(index * 3, index * 3 + 3) as unknown as [number, number, number];
+    const delta = ciede2000Weighted(lab, lab2, weights);
+    if (delta < bestDelta || (delta === bestDelta && index < best)) {
+      best = index;
+      bestDelta = delta;
+    }
+  }
+  return best;
+}
+
 export function matchGridDetailed(
   image: CellImage,
   palette: LoadedPalette,
@@ -77,7 +100,10 @@ export function matchGridDetailed(
     labs[i * 3] = lab[0];
     labs[i * 3 + 1] = lab[1];
     labs[i * 3 + 2] = lab[2];
-    cells[i] = nearestPaletteIndex(lab, palette);
+    const chroma = Math.hypot(lab[1], lab[2]);
+    cells[i] = chroma < LOW_CHROMA
+      ? nearestPaletteIndexWeighted(lab, palette)
+      : nearestPaletteIndex(lab, palette);
   }
 
   return {

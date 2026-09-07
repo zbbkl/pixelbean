@@ -17,7 +17,7 @@ export const modeOptions: ModeOption[] = [
 export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
   photo: {
     targetMode: 'photo',
-    mode: 'average',
+    mode: 'dominant',
     maxColorsEnabled: false,
     maxColors: 32,
     shadowSimplify: 0,
@@ -31,7 +31,7 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
   },
   cartoon: {
     targetMode: 'cartoon',
-    mode: 'average',
+    mode: 'dominant',
     maxColorsEnabled: true,
     maxColors: 24,
     shadowSimplify: 1,
