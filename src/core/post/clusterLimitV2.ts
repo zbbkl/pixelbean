@@ -208,8 +208,8 @@ export function clusterLimitV2(
     original.set(cell, (original.get(cell) ?? 0) + 1);
     if (protectMask?.[i] === 1) protectColors.add(cell);
   }
-  if (!original.size) return pattern;
-  const originalOverK = original.size > K;
+  // docs/19 §5.3：已 ≤K 时原样返回，不做任何预合并/改写（与 v1 clusterLimit 行为一致）。
+  if (original.size <= K) return pattern;
 
   const remap = new Map<number, number>();
   const used = sortedUsed(original);
@@ -265,14 +265,6 @@ export function clusterLimitV2(
     if (merged !== item.index) mergedCounts.delete(item.index);
     remap.set(item.index, merged);
   }
-  if (!originalOverK) {
-    const cells = new Int16Array(pattern.cells.length);
-    for (let i = 0; i < cells.length; i += 1) {
-      const cell = pattern.cells[i];
-      cells[i] = cell < 0 ? cell : (remap.get(cell) ?? cell);
-    }
-    return { ...pattern, cells, options: { ...pattern.options, maxColors: K } };
-  }
   const mergedUsed = sortedUsed(mergedCounts);
   const total = mergedUsed.reduce((sum, item) => sum + item.count, 0);
   const groups = familyOf(mergedUsed.map((item) => hueColor(palette, item.index)));
@@ -286,13 +278,14 @@ export function clusterLimitV2(
 
   const extremes = protect ? extremeProtection(mergedUsed.map((item) => hueColor(palette, item.index))) : { set: new Set<number>(), ordered: [] as number[] };
   const protectedSet = new Set(extremes.set);
-  const protectedOrder = [...extremes.ordered];
   for (const index of protectColors) protectedSet.add(index);
   const mainGuarantee = Math.max(1, Math.floor(K / 2));
   const mains = mergedUsed.filter((item) => item.count / total >= MAIN_SHARE).slice(0, mainGuarantee);
   const mainsDesc = [...mains].sort((a, b) => b.count - a.count || a.index - b.index);
   for (const item of mains) protectedSet.add(item.index);
-  protectedOrder.push(...mainsDesc.map((item) => item.index));
+  // docs/19 §5.3：删除顺序 = [饱和,亮,暗] → 主色（用量升序）；trimToK 反向遍历，
+  // 故主色需排在前段（后删）、极值排在后段（先删），保证“主色只在 K 实在不足时才牺牲”。
+  const protectedOrder = [...mainsDesc.map((item) => item.index), ...extremes.ordered];
   for (const index of extremes.set) final.add(index);
   for (const index of protectColors) final.add(index);
 

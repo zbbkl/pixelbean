@@ -62,6 +62,31 @@ describe('clusterLimitV2', () => {
   });
 
   it('keeps exact duplicate colors only as their larger counterpart', () => {
+    const paletteSmall = labPalette([
+      [56, 20, 60],
+      [56.5, 20.5, 60.5],
+      [80, 4, 40],
+      [30, -50, -20]
+    ]);
+    const pattern = {
+      paletteId: paletteSmall.set.id,
+      width: 5,
+      height: 1,
+      cells: new Int16Array([0, 0, 1, 2, 3]),
+      codes: paletteSmall.codes,
+      options: {
+        paletteId: paletteSmall.set.id, width: 5, height: 1, bg: 'white' as const,
+        mode: 'average' as const, maxColors: null, dither: 'none' as const
+      }
+    };
+    const result = clusterLimitV2(pattern, paletteSmall, 3);
+    const used = new Set(result.cells.filter((cell) => cell >= 0));
+    expect(used.size).toBeLessThanOrEqual(3);
+    expect(used.has(0)).toBe(true);
+    expect(used.has(1)).toBe(false);
+  });
+
+  it('returns unchanged when the color count is already within K', () => {
     const paletteSmall = labPalette([[56, 20, 60], [56.5, 20.5, 60.5], [80, 4, 40]]);
     const pattern = {
       paletteId: paletteSmall.set.id,
@@ -75,9 +100,7 @@ describe('clusterLimitV2', () => {
       }
     };
     const result = clusterLimitV2(pattern, paletteSmall, 3);
-    const used = new Set(result.cells.filter((cell) => cell >= 0));
-    expect(used.has(0)).toBe(true);
-    expect(used.has(1)).toBe(false);
+    expect([...result.cells]).toEqual([0, 0, 1, 2]);
   });
 
   it('protects feature-mask colors from marginal premerging', () => {

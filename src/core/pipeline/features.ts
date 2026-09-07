@@ -158,7 +158,6 @@ export function downsampleWithFeatures(
   const protect = new Uint8Array(width * height);
   const { width: sw, height: sh, data } = image;
   const candidates = new Array<CellCandidate | null>(width * height);
-  const byIndex = new Map<number, Pixel[]>();
 
   for (let gy = 0; gy < height; gy += 1) {
     const y0 = Math.floor((gy * sh) / height);
@@ -186,7 +185,6 @@ export function downsampleWithFeatures(
         }
       }
       const index = gy * width + gx;
-      byIndex.set(index, pixels);
       candidates[index] = classifyRegion(pixels, x1 - x0, y1 - y0);
     }
   }
