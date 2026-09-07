@@ -6,6 +6,9 @@ export const MAX_CELLS = 150_000;
 export const MAX_SOURCE_EDGE = 4096;
 export const MAX_SOURCE_PIXELS = 16_000_000;
 
+/** v1.2.1 市面主流限色快捷档位（点击即启用限色并设 K）。 */
+export const MAX_COLOR_STEPS = [24, 48, 72, 96, 120, 144, 168, 221, 313] as const;
+
 export interface ResolvedRequest {
   options: ConvertOptions;
   contentWidth: number;

@@ -34,24 +34,24 @@ export type AppAction =
   | { type: 'restore'; state: Partial<AppState> };
 
 export const defaultSettings: UiSettings = {
-  targetMode: 'cartoon',
+  targetMode: 'photo',
   gridMode: 'long-edge',
   longEdge: 58,
-  boardSide: 29,
+  boardSide: 52,
   paletteId: 'mard-291',
   bg: 'white',
   mode: 'average',
-  maxColorsEnabled: true,
-  maxColors: 24,
+  maxColorsEnabled: false,
+  maxColors: 32,
   dither: 'none',
   adjust: { brightness: 0, contrast: 0, saturation: 0 },
-  speckleClean: true,
+  speckleClean: false,
   speckleMax: 2,
   speckleDeltaE: 30,
-  shadowSimplify: 1,
-  outline: true,
+  shadowSimplify: 0,
+  outline: false,
   outlineTau: 0.18,
-  protectFeatures: false,
+  protectFeatures: true,
   showCodes: true,
   showGridLines: true
 };
@@ -131,6 +131,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'convertError':
       return { ...state, loading: false, status: 'ready', error: action.message };
+    // v1.2.1 起无 UI 触发该动作；分支保留供历史 draft/协议兼容。
     case 'cancelConvert':
       return { ...state, loading: false, status: 'ready' };
     case 'hover':

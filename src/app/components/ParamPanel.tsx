@@ -2,6 +2,7 @@ import { boardPresets, longEdgePresets } from '../boardPresets';
 import type { UiSettings } from '../types';
 import type { PaletteSet } from '../../core/palette/types';
 import { applyMode, modeOptions, type NonCustomTargetMode } from '../../core/post/modePresets';
+import { MAX_COLOR_STEPS } from '../options';
 
 interface Props {
   settings: UiSettings;
@@ -148,7 +149,7 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
               checked={settings.protectFeatures}
               onChange={(event) => onPatch({ protectFeatures: event.target.checked })}
             />
-            <span>保留高对比细节（细线/眼睛/点缀）</span>
+            <span>保留高对比细节（细线/眼睛/点缀），同时优化区域边界取色</span>
           </label>
         </div>
         <div className="field-row">
@@ -163,7 +164,7 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
         </div>
         <div className="field-row">
           <span className="field-label-inline">智能限色 K</span>
-          {[8, 12, 16, 24, 36].map((k) => (
+          {MAX_COLOR_STEPS.map((k) => (
             <button
               key={k}
               className={`mini-chip ${limitOn && settings.maxColors === k ? 'active' : ''}`}
@@ -187,9 +188,9 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
               label="K"
               value={settings.maxColors}
               min={2}
-              max={200}
+              max={400}
               step={1}
-              onChange={(value) => onPatch({ maxColors: Math.max(2, Math.min(200, value)) })}
+              onChange={(value) => onPatch({ maxColors: Math.max(2, Math.min(400, value)) })}
             />
           )}
         </div>

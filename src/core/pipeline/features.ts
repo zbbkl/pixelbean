@@ -14,6 +14,9 @@ export const FEATURE_LINE_DE = 12;
 export const FEATURE_DOT_DE = 12;
 export const FEATURE_DOT_MIN_TOTAL = 4;
 export const FEATURE_DOT_CONTRAST_MIN = 0.35;
+export const BOUNDARY_DE_Y = 0.15;
+export const BOUNDARY_SHARE_MIN = 0.3;
+export const BOUNDARY_MARGIN = 3;
 
 export interface FeatureOptions {
   enabled: boolean;
@@ -33,12 +36,29 @@ interface Pixel {
   b: number;
 }
 
-type FeatureKind = 'dot' | 'vline' | 'hline';
+type FeatureKind = 'dot' | 'vline' | 'hline' | 'boundary';
 
 interface CellCandidate {
   kind: FeatureKind;
   meanF: [number, number, number];
+  meanM?: [number, number, number];
   deltaY: number;
+}
+
+function meanRgbOf(pixels: Pixel[]): [number, number, number] {
+  let linR = 0;
+  let linG = 0;
+  let linB = 0;
+  for (const pixel of pixels) {
+    linR += srgbByteToLinear(pixel.r);
+    linG += srgbByteToLinear(pixel.g);
+    linB += srgbByteToLinear(pixel.b);
+  }
+  return linearRgbToSrgbByte([
+    linR / pixels.length,
+    linG / pixels.length,
+    linB / pixels.length
+  ]);
 }
 
 function regionRgb(
@@ -107,23 +127,13 @@ function classifyRegion(
   let maxX = Number.NEGATIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
-  let linR = 0;
-  let linG = 0;
-  let linB = 0;
   for (const pixel of smallSide) {
     minX = Math.min(minX, pixel.x);
     maxX = Math.max(maxX, pixel.x);
     minY = Math.min(minY, pixel.row);
     maxY = Math.max(maxY, pixel.row);
-    linR += srgbByteToLinear(pixel.r);
-    linG += srgbByteToLinear(pixel.g);
-    linB += srgbByteToLinear(pixel.b);
   }
-  const meanF: [number, number, number] = linearRgbToSrgbByte([
-    linR / smallSide.length,
-    linG / smallSide.length,
-    linB / smallSide.length
-  ]);
+  const meanF = meanRgbOf(smallSide);
   const bw = maxX - minX + 1;
   const bh = maxY - minY + 1;
   const fracW = bw / regionW;
@@ -131,6 +141,9 @@ function classifyRegion(
   if (fracW <= FEATURE_SHAPE_FRAC && fracH <= FEATURE_SHAPE_FRAC) return { kind: 'dot', meanF, deltaY };
   if (fracW <= FEATURE_SHAPE_FRAC && fracH > FEATURE_SHAPE_FRAC) return { kind: 'vline', meanF, deltaY };
   if (fracW > FEATURE_SHAPE_FRAC && fracH <= FEATURE_SHAPE_FRAC) return { kind: 'hline', meanF, deltaY };
+  if (share >= BOUNDARY_SHARE_MIN && deltaY >= BOUNDARY_DE_Y) {
+    return { kind: 'boundary', meanF, meanM: meanRgbOf(otherSide), deltaY };
+  }
   return null;
 }
 
@@ -204,7 +217,7 @@ export function downsampleWithFeatures(
 
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
-    if (!candidate || candidate.kind === 'dot') continue;
+    if (!candidate || (candidate.kind !== 'vline' && candidate.kind !== 'hline')) continue;
     const x = index % width;
     const y = Math.floor(index / width);
     const neighbors = candidate.kind === 'vline'
@@ -260,6 +273,52 @@ export function downsampleWithFeatures(
     for (const index of cluster.members) {
       const candidate = candidates[index];
       if (candidate) writeFeature(index, candidate.meanF);
+    }
+  }
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (!candidate || candidate.kind !== 'boundary' || !candidate.meanM) continue;
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const neighborIndices = [
+      x > 0 ? index - 1 : -1,
+      x < width - 1 ? index + 1 : -1,
+      y > 0 ? index - width : -1,
+      y < height - 1 ? index + width : -1
+    ];
+    let dF = 0;
+    let dM = 0;
+    let n = 0;
+    for (const nextIndex of neighborIndices) {
+      if (nextIndex < 0) continue;
+      const offset = nextIndex * 4;
+      const rgb: [number, number, number] = [
+        cells[offset],
+        cells[offset + 1],
+        cells[offset + 2]
+      ];
+      const fDelta = deltaBetween(rgb, candidate.meanF);
+      const mDelta = deltaBetween(rgb, candidate.meanM);
+      if (fDelta === null || mDelta === null) continue;
+      dF += fDelta;
+      dM += mDelta;
+      n += 1;
+    }
+    if (!n) continue;
+    dF /= n;
+    dM /= n;
+    const offset = index * 4;
+    if (dF + BOUNDARY_MARGIN <= dM) {
+      cells[offset] = candidate.meanF[0];
+      cells[offset + 1] = candidate.meanF[1];
+      cells[offset + 2] = candidate.meanF[2];
+      cells[offset + 3] = 255;
+    } else if (dM + BOUNDARY_MARGIN <= dF) {
+      cells[offset] = candidate.meanM[0];
+      cells[offset + 1] = candidate.meanM[1];
+      cells[offset + 2] = candidate.meanM[2];
+      cells[offset + 3] = 255;
     }
   }
 

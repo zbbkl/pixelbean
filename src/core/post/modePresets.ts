@@ -22,12 +22,12 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     maxColors: 32,
     shadowSimplify: 0,
     speckleClean: false,
-    speckleMax: 1,
+    speckleMax: 2,
     speckleDeltaE: 30,
     outline: false,
     outlineTau: 0.18,
     dither: 'none',
-    protectFeatures: false
+    protectFeatures: true
   },
   cartoon: {
     targetMode: 'cartoon',

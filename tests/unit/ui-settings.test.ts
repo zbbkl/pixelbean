@@ -2,6 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { applyUiSettingsPatch, defaultSettings, initialState, appReducer } from '../../src/app/state';
 
 describe('target-mode custom linkage', () => {
+  it('defaults to the photo preset with the v1.2.1 profile', () => {
+    expect(defaultSettings).toMatchObject({
+      targetMode: 'photo',
+      gridMode: 'long-edge',
+      longEdge: 58,
+      boardSide: 52,
+      maxColorsEnabled: false,
+      maxColors: 32,
+      speckleClean: false,
+      shadowSimplify: 0,
+      outline: false,
+      protectFeatures: true
+    });
+  });
+
   it('keeps the current preset when a new preset is selected', () => {
     const patch = applyUiSettingsPatch({ targetMode: 'cartoon', maxColors: 24 });
     expect(patch.targetMode).toBe('cartoon');

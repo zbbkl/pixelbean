@@ -45,6 +45,7 @@
   }
   .app-body {
     display: block;
+    flex: 0 0 auto;
     height: calc(100vh - 56px - 58px);
     height: calc(100vh - var(--app-header-h) - var(--mobile-nav-h));
     height: calc(100dvh - var(--app-header-h) - var(--mobile-nav-h));

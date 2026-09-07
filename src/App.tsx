@@ -209,11 +209,6 @@ export default function App() {
     dispatch({ type: 'source', source: null });
   }
 
-  function cancel() {
-    seqRef.current += 1;
-    dispatch({ type: 'cancelConvert' });
-  }
-
   function pngExport(mode: PngMode) {
     if (!state.pattern || !loadedPalette) return;
     void exportPng(state.pattern, loadedPalette, mode).then((blob) => {
@@ -256,9 +251,6 @@ export default function App() {
             参数
           </button>
           {state.loading && <span className="status-pill">转换中…</span>}
-          <button className="button ghost" onClick={cancel} disabled={!state.loading}>
-            取消
-          </button>
           <ExportBar
             disabled={!state.pattern || !loadedPalette}
             onPng={pngExport}

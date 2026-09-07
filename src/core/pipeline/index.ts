@@ -7,11 +7,13 @@ import { downsampleWithFeatures, placeProtectMask } from './features';
 import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
 import { isPostActive, runPostPipeline } from '../post';
+import { regionClean } from '../post/regionClean';
 
 export function convertPipeline(
   source: CellImage,
   options: ConvertOptions,
-  palette: LoadedPalette
+  palette: LoadedPalette,
+  regionCleanEnabled = false
 ): Pattern {
   const contentWidth = options.contain?.contentWidth ?? options.width;
   const contentHeight = options.contain?.contentHeight ?? options.height;
@@ -69,6 +71,9 @@ export function convertPipeline(
     }
   }
 
+  if (regionCleanEnabled) {
+    pattern = regionClean(pattern, palette, protect);
+  }
   if (options.contain) {
     pattern = placeContain(pattern, options.width, options.height);
     protect = placeProtectMask(protect, contentWidth, contentHeight, options.width, options.height);
@@ -87,3 +92,4 @@ export * from './dither';
 export * from './colorLimit';
 export * from './contain';
 export * from '../post';
+export * from '../post/regionClean';

@@ -30,9 +30,24 @@ describe('modePresets', () => {
 
   it('protectFeatures defaults follow the mode table', () => {
     expect(MODE_PRESETS.cartoon.protectFeatures).toBe(true);
-    expect(MODE_PRESETS.photo.protectFeatures).toBe(false);
+    expect(MODE_PRESETS.photo.protectFeatures).toBe(true);
     expect(MODE_PRESETS.lineart.protectFeatures).toBe(false);
     expect(MODE_PRESETS.pixel.protectFeatures).toBe(false);
+  });
+
+  it('photo preset carries the v1.2.1 default photo profile', () => {
+    const patch = applyMode('photo', defaultSettings);
+    expect(patch).toMatchObject({
+      targetMode: 'photo',
+      mode: 'average',
+      maxColorsEnabled: false,
+      maxColors: 32,
+      shadowSimplify: 0,
+      speckleClean: false,
+      speckleMax: 2,
+      outline: false,
+      protectFeatures: true
+    });
   });
 
   it('lineart and pixel use dominant sampling', () => {
@@ -47,6 +62,7 @@ describe('modePresets', () => {
     expect(patch.dither).toBe('none');
     expect(patch.speckleClean).toBe(false);
     expect(patch.shadowSimplify).toBe(0);
+    expect(patch.protectFeatures).toBe(true);
   });
 
   it('applyMode keeps current color adjustments', () => {
