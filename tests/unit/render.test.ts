@@ -45,4 +45,17 @@ describe('drawGrid LOD', () => {
     });
     expect(ctx.fillText).toHaveBeenCalled();
   });
+
+  it('honors the optional visible range without drawing outside it', () => {
+    const palette = loadPalette(mard);
+    const ctx = mockContext();
+    drawGrid(ctx, solidPattern(10, 10, optionsFixture()), palette, {
+      cellPx: 10,
+      offsetX: 0,
+      offsetY: 0,
+      showCodes: false,
+      showGridLines: false
+    }, { col0: 2, row0: 3, col1: 5, row1: 6 });
+    expect(ctx.fillRect).toHaveBeenCalledTimes(9);
+  });
 });

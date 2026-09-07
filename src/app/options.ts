@@ -30,6 +30,7 @@ export function postFromSettings(settings: UiSettings): PostOptions | undefined 
 export function resolveRequest(source: SourceImage, settings: UiSettings): ResolvedRequest {
   const { gridMode, longEdge, boardSide, maxColorsEnabled, maxColors } = settings;
   const post = postFromSettings(settings);
+  const features = settings.protectFeatures ? { features: { enabled: true } } : {};
   if (gridMode === 'square-board') {
     const content = deriveContainContent(source.naturalWidth, source.naturalHeight, boardSide, boardSide);
     return {
@@ -45,6 +46,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
         dither: settings.dither,
         adjust: settings.adjust,
         post,
+        ...features,
         contain: {
           contentWidth: content.width,
           contentHeight: content.height
@@ -65,7 +67,8 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
       maxColors: maxColorsEnabled ? maxColors : null,
       dither: settings.dither,
       adjust: settings.adjust,
-      post
+      post,
+      ...features
     }
   };
 }

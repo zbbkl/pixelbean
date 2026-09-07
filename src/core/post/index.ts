@@ -1,9 +1,9 @@
 import type { Pattern, PostOptions } from '../../types';
 import type { LoadedPalette } from '../palette/types';
-import { clusterLimit } from './clusterLimit';
+import { clusterLimitV2 } from './clusterLimit';
 import { outline } from './outline';
-import { shadowSimplify } from './shadowSimplify';
-import { speckleClean } from './speckle';
+import { shadowSimplifyV2 } from './shadowSimplify';
+import { speckleCleanV2 } from './speckle';
 
 export function isPostActive(post: PostOptions | undefined): boolean {
   if (!post) return false;
@@ -21,22 +21,24 @@ export function isPostActive(post: PostOptions | undefined): boolean {
 export function runPostPipeline(
   pattern: Pattern,
   palette: LoadedPalette,
-  post: PostOptions
+  post: PostOptions,
+  protect: Uint8Array | null = null
 ): Pattern {
   let result = pattern;
   if (post.speckleClean) {
-    result = speckleClean(
+    result = speckleCleanV2(
       result,
       palette,
       Math.max(1, Math.min(3, post.speckleMax)),
-      Math.max(20, Math.min(40, post.speckleDeltaE))
+      Math.max(20, Math.min(40, post.speckleDeltaE)),
+      protect
     );
   }
   if (post.shadowSimplify > 0) {
-    result = shadowSimplify(result, palette, post.shadowSimplify);
+    result = shadowSimplifyV2(result, palette, post.shadowSimplify, protect);
   }
   if (post.maxColors !== null) {
-    result = clusterLimit(result, palette, Math.max(1, Math.floor(post.maxColors)));
+    result = clusterLimitV2(result, palette, Math.max(1, Math.floor(post.maxColors)), true, protect);
   }
   if (post.outline) {
     result = outline(result, palette, Math.max(0.1, Math.min(0.3, post.outlineTau)));

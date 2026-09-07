@@ -168,6 +168,7 @@ export default function App() {
     settings.shadowSimplify,
     settings.outline,
     settings.outlineTau,
+    settings.protectFeatures,
     settings.dither,
     settings.adjust
   ]);

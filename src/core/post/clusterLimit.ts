@@ -45,7 +45,9 @@ function usedColors(counts: Map<number, number>, palette: LoadedPalette): UsedCo
   });
 }
 
-function familyOf(colors: UsedColor[], palette: LoadedPalette): number[][] {
+export function familyOf(
+  colors: Array<{ index: number; L: number; C: number; hue: number }>
+): number[][] {
   const sorted = [...colors].sort((a, b) => a.hue - b.hue || a.index - b.index);
   const n = sorted.length;
   if (!n) return [];
@@ -256,7 +258,7 @@ export function clusterLimit(pattern: Pattern, palette: LoadedPalette, K: number
   if (K <= 0 || counts.size <= K) return pattern;
   const used = usedColors(counts, palette);
   const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
-  const groups = familyOf(used, palette);
+  const groups = familyOf(used);
 
   let final = new Set<number>();
   for (const group of groups) {
@@ -288,3 +290,5 @@ export function clusterLimit(pattern: Pattern, palette: LoadedPalette, K: number
     options: { ...pattern.options, maxColors: K }
   };
 }
+
+export { clusterLimitV2 } from './clusterLimitV2';

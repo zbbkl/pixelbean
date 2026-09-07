@@ -21,4 +21,8 @@ describe('clampPan', () => {
     expect(result.panX).toBe(-1408);
     expect(result.panY).toBe(42); // 42 在 [-1016, 536] 内，保持不变
   });
+
+  it('returns a defensive zero pan when viewport and grid are both tiny', () => {
+    expect(clampPan(2, 2, 2, 2, 999, -999)).toEqual({ panX: 0, panY: 0 });
+  });
 });

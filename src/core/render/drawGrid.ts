@@ -18,6 +18,14 @@ export interface DrawGridView {
   hover?: GridHover | null;
 }
 
+/** 可见格子区间，col1/row1 为开区间；缺省时绘制全图。 */
+export interface CellRange {
+  col0: number;
+  row0: number;
+  col1: number;
+  row1: number;
+}
+
 function textColorFor(color: { hex: string | null; rgb?: [number, number, number] }): string {
   const rgb: [number, number, number] = color.rgb ?? [255, 255, 255];
   return relativeLuminance(rgb) < 0.45 ? '#ffffff' : '#111111';
@@ -28,10 +36,15 @@ export function drawGrid(
   ctx: CanvasRenderingContext2D,
   pattern: Pattern,
   palette: LoadedPalette,
-  view: DrawGridView
+  view: DrawGridView,
+  range?: CellRange | null
 ): void {
   const { width, height, cells } = pattern;
   const { cellPx, offsetX, offsetY, showCodes, showGridLines, hover } = view;
+  const y0 = range ? Math.max(0, Math.min(height, range.row0)) : 0;
+  const y1 = range ? Math.max(y0, Math.min(height, range.row1)) : height;
+  const x0 = range ? Math.max(0, Math.min(width, range.col0)) : 0;
+  const x1 = range ? Math.max(x0, Math.min(width, range.col1)) : width;
   const codeStyle = palette.set.codeStyle;
   const showText = showCodes && cellPx >= 14;
   const showBorders = showGridLines && cellPx >= 14;
@@ -42,8 +55,8 @@ export function drawGrid(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
       const index = cells[y * width + x];
       if (index < 0) continue;
       const color = palette.solids[index];

@@ -145,6 +145,16 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
           <label className="switch-field">
             <input
               type="checkbox"
+              checked={settings.protectFeatures}
+              onChange={(event) => onPatch({ protectFeatures: event.target.checked })}
+            />
+            <span>保留高对比细节（细线/眼睛/点缀）</span>
+          </label>
+        </div>
+        <div className="field-row">
+          <label className="switch-field">
+            <input
+              type="checkbox"
               checked={settings.bg === 'white'}
               onChange={(event) => onPatch({ bg: event.target.checked ? 'white' : 'black' })}
             />
@@ -210,8 +220,8 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
             onChange={(event) => onPatch({ shadowSimplify: Number(event.target.value) as 0 | 1 | 2 })}
           >
             <option value={0}>关</option>
-            <option value={1}>标准</option>
-            <option value={2}>强</option>
+            <option value={1}>标准（相近暗部并入统一深色，至多 2 层）</option>
+            <option value={2}>强（暗部统一为 1 层深色）</option>
           </select>
         </label>
         <div className="field-row">

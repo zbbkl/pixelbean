@@ -112,7 +112,7 @@ describe('golden yellow-gradient fixture', () => {
       .update(`${again.width}x${again.height}:${[...again.cells].join(',')}`)
       .digest('hex');
     expect(hash).toBe(hash2);
-    expect(hash).toBe('2f9046a13bb3198684030ecba359ffc000c5d1cf9de10db3102755417886944b');
+    expect(hash).toBe('f005e3d3558e9e249e38be44081745bd202804243687e787c2a168816cd116d6');
   });
 
   it('uses the real sRGB-to-Lab conversion for the fixture palette', () => {

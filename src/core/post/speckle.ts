@@ -50,6 +50,12 @@ function labelComponents(pattern: Pattern): Component[] {
   return components;
 }
 
+interface BoundaryMajority {
+  color: number;
+  count: number;
+  total: number;
+}
+
 function mostFrequentBoundary(boundary: Map<number, number>): number | null {
   let best = -1;
   let bestCount = 0;
@@ -86,6 +92,74 @@ export function speckleClean(
     const delta = ciede2000(labOf(palette, component.color), labOf(palette, target));
     if (delta > deltaEthr) continue;
     for (const cell of component.cells) cells[cell] = target;
+  }
+
+  return { ...pattern, cells };
+}
+
+/**
+ * §v1.2 二阶孤立噪点清理：先做“单格 + 至少 2 边贴主色”的一阶删除，
+ * 再对 2..N 格连通域执行贴附强度合并；含 protect 掩码的域整体跳过。
+ */
+export function speckleCleanV2(
+  pattern: Pattern,
+  palette: LoadedPalette,
+  noiseMax = 2,
+  deltaEthr = 30,
+  protect: Uint8Array | null = null
+): Pattern {
+  const cells = new Int16Array(pattern.cells);
+
+  const majorityOf = (component: Component): BoundaryMajority | null => {
+    let best = -1;
+    let bestCount = 0;
+    let total = 0;
+    for (const [index, count] of component.boundary) {
+      total += count;
+      if (count > bestCount || (count === bestCount && index < best)) {
+        best = index;
+        bestCount = count;
+      }
+    }
+    return total > 0 ? { color: best, count: bestCount, total } : null;
+  };
+
+  const isProtected = (component: Component) =>
+    protect !== null && component.cells.some((cell) => protect[cell] === 1);
+  const merge = (component: Component, target: number) => {
+    for (const cell of component.cells) cells[cell] = target;
+  };
+  const mergeable = (component: Component, majority: BoundaryMajority) => {
+    if (majority.color === component.color) return false;
+    const delta = ciede2000(labOf(palette, component.color), labOf(palette, majority.color));
+    return delta <= deltaEthr;
+  };
+
+  // Phase 1：单格删除，需要 ≥2 条边贴同一主体且占比 ≥50%（docs/19 S1）。
+  for (const component of labelComponents(pattern).sort(
+    (a, b) => a.cells.length - b.cells.length || a.color - b.color
+  )) {
+    if (component.cells.length !== 1 || isProtected(component)) continue;
+    const majority = majorityOf(component);
+    if (majority && majority.count >= 2 && majority.count / majority.total >= 0.5 && mergeable(component, majority)) {
+      merge(component, majority.color);
+    }
+  }
+
+  // Phase 2：2..N 格同色连通域，贴附边数 ≥ 域格数才并入主色。
+  for (const component of labelComponents({ ...pattern, cells }).sort(
+    (a, b) => a.cells.length - b.cells.length || a.color - b.color
+  )) {
+    if (component.cells.length < 2 || component.cells.length > noiseMax || isProtected(component)) continue;
+    const majority = majorityOf(component);
+    if (
+      majority &&
+      majority.count >= component.cells.length &&
+      majority.count / majority.total >= 0.5 &&
+      mergeable(component, majority)
+    ) {
+      merge(component, majority.color);
+    }
   }
 
   return { ...pattern, cells };

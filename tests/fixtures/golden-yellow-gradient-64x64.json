@@ -18,6 +18,6 @@
     "yellowLayers": "<=3",
     "darkLayersBelowL45": "<=1"
   },
-  "cellsSha256": "2f9046a13bb3198684030ecba359ffc000c5d1cf9de10db3102755417886944b",
-  "algorithmVersion": "pixelbean-v1.1-post"
+  "cellsSha256": "f005e3d3558e9e249e38be44081745bd202804243687e787c2a168816cd116d6",
+  "algorithmVersion": "pixelbean-v1.2-post"
 }

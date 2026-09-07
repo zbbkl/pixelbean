@@ -23,8 +23,16 @@ describe('modePresets', () => {
       speckleMax: 2,
       outline: true,
       outlineTau: 0.18,
-      dither: 'none'
+      dither: 'none',
+      protectFeatures: true
     });
+  });
+
+  it('protectFeatures defaults follow the mode table', () => {
+    expect(MODE_PRESETS.cartoon.protectFeatures).toBe(true);
+    expect(MODE_PRESETS.photo.protectFeatures).toBe(false);
+    expect(MODE_PRESETS.lineart.protectFeatures).toBe(false);
+    expect(MODE_PRESETS.pixel.protectFeatures).toBe(false);
   });
 
   it('lineart and pixel use dominant sampling', () => {

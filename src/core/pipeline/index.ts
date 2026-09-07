@@ -3,6 +3,7 @@ import type { LoadedPalette } from '../palette/types';
 import { placeContain } from './contain';
 import { ditherFloydSteinberg } from './dither';
 import { downsample } from './downsample';
+import { downsampleWithFeatures, placeProtectMask } from './features';
 import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
 import { isPostActive, runPostPipeline } from '../post';
@@ -21,14 +22,30 @@ export function convertPipeline(
     contain: undefined
   };
 
-  const sampled = downsample(
-    source,
-    contentWidth,
-    contentHeight,
-    options.mode,
-    options.bg,
-    options.adjust
-  );
+  const featuresEnabled = options.features?.enabled === true;
+  let sampled: Uint8ClampedArray;
+  let protect: Uint8Array | null = null;
+  if (featuresEnabled) {
+    const featured = downsampleWithFeatures(
+      source,
+      contentWidth,
+      contentHeight,
+      options.mode,
+      options.bg,
+      options.adjust
+    );
+    sampled = featured.cells;
+    protect = featured.protect;
+  } else {
+    sampled = downsample(
+      source,
+      contentWidth,
+      contentHeight,
+      options.mode,
+      options.bg,
+      options.adjust
+    );
+  }
   const post = options.post;
   const postActive = isPostActive(post);
   const ditherRequested = options.dither === 'floyd-steinberg';
@@ -43,6 +60,7 @@ export function convertPipeline(
   let pattern: Pattern;
   if (ditherRequested && !ditherPostConflict) {
     pattern = ditherFloydSteinberg(cellImage, palette, contentOptions);
+    protect = null; // 抖动路径不消费特征掩码（docs/19 §1.1/§4.6）
   } else {
     const matched = matchGridDetailed(cellImage, palette, contentOptions);
     pattern = matched.pattern;
@@ -53,15 +71,17 @@ export function convertPipeline(
 
   if (options.contain) {
     pattern = placeContain(pattern, options.width, options.height);
+    protect = placeProtectMask(protect, contentWidth, contentHeight, options.width, options.height);
   }
   if (postActive && post) {
-    pattern = runPostPipeline(pattern, palette, post);
+    pattern = runPostPipeline(pattern, palette, post, protect);
   }
   return pattern;
 }
 
 export * from './geometry';
 export * from './downsample';
+export * from './features';
 export * from './match';
 export * from './dither';
 export * from './colorLimit';

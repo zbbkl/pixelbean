@@ -45,6 +45,7 @@ export interface UiSettings {
   shadowSimplify: 0 | 1 | 2;
   outline: boolean;
   outlineTau: number;
+  protectFeatures: boolean;
   showCodes: boolean;
   showGridLines: boolean;
 }
@@ -63,6 +64,7 @@ export interface ConvertOptions {
   dither: DitherMode;
   adjust?: AdjustOptions;
   post?: PostOptions;
+  features?: { enabled: boolean };
   contain?: {
     contentWidth: number;
     contentHeight: number;

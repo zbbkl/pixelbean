@@ -26,7 +26,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     speckleDeltaE: 30,
     outline: false,
     outlineTau: 0.18,
-    dither: 'none'
+    dither: 'none',
+    protectFeatures: false
   },
   cartoon: {
     targetMode: 'cartoon',
@@ -39,7 +40,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     speckleDeltaE: 30,
     outline: true,
     outlineTau: 0.18,
-    dither: 'none'
+    dither: 'none',
+    protectFeatures: true
   },
   lineart: {
     targetMode: 'lineart',
@@ -52,7 +54,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     speckleDeltaE: 30,
     outline: false,
     outlineTau: 0.18,
-    dither: 'none'
+    dither: 'none',
+    protectFeatures: false
   },
   pixel: {
     targetMode: 'pixel',
@@ -65,7 +68,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     speckleDeltaE: 30,
     outline: false,
     outlineTau: 0.18,
-    dither: 'none'
+    dither: 'none',
+    protectFeatures: false
   }
 };
 

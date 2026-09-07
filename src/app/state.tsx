@@ -51,6 +51,7 @@ export const defaultSettings: UiSettings = {
   shadowSimplify: 1,
   outline: true,
   outlineTau: 0.18,
+  protectFeatures: false,
   showCodes: true,
   showGridLines: true
 };
