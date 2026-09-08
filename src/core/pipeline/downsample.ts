@@ -203,7 +203,7 @@ const LAB_BUCKETS_L = 10;
 const LAB_BUCKETS_A = 12;
 const LAB_BUCKETS_B = 12;
 const LAB_BUCKET_COUNT = LAB_BUCKETS_L * LAB_BUCKETS_A * LAB_BUCKETS_B;
-const LAB_NEIGHBOR_WEIGHT = [1, 0.5, 0.5] as const;
+const LAB_NEIGHBOR_WEIGHT = [0.5, 0.5, 0.5] as const;
 
 function labBucket(lab: readonly [number, number, number]): number {
   const l = Math.max(0, Math.min(LAB_BUCKETS_L - 1, Math.floor(lab[0] / 10)));
@@ -280,9 +280,9 @@ export function downsampleDominantV2(
                 if (!dl && !da && !db) continue;
                 const neighbor = l * LAB_BUCKETS_A * LAB_BUCKETS_B + a * LAB_BUCKETS_B + b;
                 const weight =
-                  (dl === 0 ? LAB_NEIGHBOR_WEIGHT[0] : 1 - LAB_NEIGHBOR_WEIGHT[0]) *
-                  (da === 0 ? LAB_NEIGHBOR_WEIGHT[1] : 1 - LAB_NEIGHBOR_WEIGHT[1]) *
-                  (db === 0 ? LAB_NEIGHBOR_WEIGHT[2] : 1 - LAB_NEIGHBOR_WEIGHT[2]);
+                  (dl === 0 ? 1 : LAB_NEIGHBOR_WEIGHT[0]) *
+                  (da === 0 ? 1 : LAB_NEIGHBOR_WEIGHT[1]) *
+                  (db === 0 ? 1 : LAB_NEIGHBOR_WEIGHT[2]);
                 score += emptySmooth * counts[neighbor] * weight;
               }
             }
