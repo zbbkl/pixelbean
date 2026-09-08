@@ -17,6 +17,7 @@
 | v1.2.1 优化（默认照片、底板 32–120、限色档位 24–313、色块识别增强、移动 UI 收口） | DeepSeek Harness（规格）→ Codex（实现）→ Claude Code 复核 | ✅ 已实现并终审 — 自测 [`docs/26-v1.2.1-自测报告.md`](docs/26-v1.2.1-自测报告.md)；终审 [`docs/27-v1.2.1审查报告.md`](docs/27-v1.2.1审查报告.md)（155 例全绿，PASS） |
 | v1.2 终版商用优化（网格主导色采样重构、低饱和小特征保护、连通域色块合并、主体边缘收敛、CIEDE2000 权重） | DeepSeek Harness（算法架构）→ Codex（实现）→ Claude Code 复核 | ✅ 已实现并终审 — 任务书 [`docs/29-v1.2-终版商用优化任务书-Codex.md`](docs/29-v1.2-终版商用优化任务书-Codex.md)、自测 [`docs/30-v1.2-终版商用优化自测报告.md`](docs/30-v1.2-终版商用优化自测报告.md)；终审 [`docs/31-v1.2-终版商用优化审查报告.md`](docs/31-v1.2-终版商用优化审查报告.md)（169 例全绿，PASS） |
 | v1.2 P0-1 修复（E1 空桶平滑亮度轴权重 bug） | DeepSeek Harness（规格）→ Codex（实现）→ Claude Code 复核 | ✅ 已实现并自测 — 任务书 [`docs/35-v1.2-P0-1修复任务书-Codex.md`](docs/35-v1.2-P0-1修复任务书-Codex.md)、自测 [`docs/36-v1.2-P0-1修复自测报告.md`](docs/36-v1.2-P0-1修复自测报告.md) |
+| v1.2 去背景与像素化质量修复（一键去背景、透明预览、主体盒 contain、默认图片模式） | DeepSeek Harness（定位）→ Codex（实现/自测）→ Claude Code（独立验收） | ⚠️ **验收未通过**：默认开启会吞掉近白主体（白身白底软阴影图结构性失效）→ 已回退默认关闭 + 可信度兜底 + 回归门禁；任务书 [`docs/37-v1.2-去背景与劣化定位任务书-Codex.md`](docs/37-v1.2-去背景与劣化定位任务书-Codex.md)、自测 [`docs/38-v1.2-去背景自测报告.md`](docs/38-v1.2-去背景自测报告.md)、**验收 [`docs/39-v1.2-去背景验收报告-ClaudeCode.md`](docs/39-v1.2-去背景验收报告-ClaudeCode.md)（不通过）**、修订 [`docs/40-v1.2-去背景验收修订与稳健方案.md`](docs/40-v1.2-去背景验收修订与稳健方案.md) |
 
 **流水线纪律**：阶段 2 的产物必须跑得起来并按 `docs/01` 验收清单自测；阶段 3 必须真的启动项目复现问题，禁止只看代码。
 
@@ -62,6 +63,10 @@
 | [`docs/35-v1.2-P0-1修复任务书-Codex.md`](docs/35-v1.2-P0-1修复任务书-Codex.md) | P0-1（E1 空桶平滑亮度轴失效）Codex 实现任务书：精确两处改动 + §6.2 验收矩阵 + 可运行验证 harness（`.tools/bench/`，tsc→CJS→node）+ 实测基线（T1_photo maxDE≈44.7/reversals≈7）+ 交接/复核清单 |
 | [`docs/36-v1.2-P0-1修复自测报告.md`](docs/36-v1.2-P0-1修复自测报告.md) | P0-1 修复自测：两处权重 diff、harness before/after（T1 maxDE 44.69→36.81）、tsc/vitest 169/build 回归、T3 保持 0/8 |
 | [`docs/37-v1.2-去背景与劣化定位任务书-Codex.md`](docs/37-v1.2-去背景与劣化定位任务书-Codex.md) | 白底软阴影主体劣化定位（非 P0-1 所致；白底当内容/灰影 blob/近白头缺块）→ 一键去背景方案（`extractSubject`，边界洪水填充+edge-stop，像素化前，默认开可关）+ 主体盒 contain + 默认「图片模式」配置说明 + 交接/复核清单 |
+| [`docs/38-v1.2-去背景自测报告.md`](docs/38-v1.2-去背景自测报告.md) | 一键去背景/透明预览/主体盒 contain/默认图片模式自测：兔子与内置样例 A/B、红点小特征回归、178 例单测与生产构建结果 |
+| [`docs/39-v1.2-去背景验收报告-ClaudeCode.md`](docs/39-v1.2-去背景验收报告-ClaudeCode.md) | Claude Code 独立验收**（结论：不通过）**：默认开启吞掉近白主体；白身白底软阴影图颜色洪水结构性失效（主体比背景更接近背景色/无强边缘），`tol×edge` 无解；P0/P1/P2 清单与处置建议 |
+| [`docs/40-v1.2-去背景验收修订与稳健方案.md`](docs/40-v1.2-去背景验收修订与稳健方案.md) | DeepSeek 修订：A 方案（止血=默认关闭+可信度兜底+兔子回归门禁，治空图纸/吞主体）；B 方案（稳健去背景=多尺度结构梯度引导，分级为独立后续，过门禁才可默认开启）；配置与交接/复核清单 |
+| [`docs/41-v1.2-去背景A+B实现任务书-Codex.md`](docs/41-v1.2-去背景A+B实现任务书-Codex.md) | A+B 实现级任务书：A=默认关闭+`reliable` 兜底+兔子回归门禁；B=多尺度结构梯度背景洪水（`innerMean vs ringMean`，s∈{2,4,8}）+主体装配；门禁 G1–G7 通过才默认开启；叠加/交付/复核清单 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
 
 阶段 1 验收标准（已确认，供阶段 3 复核）：
