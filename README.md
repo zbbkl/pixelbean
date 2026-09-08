@@ -61,6 +61,7 @@
 | [`docs/34-开源对标调研与算法优化方案.md`](docs/34-开源对标调研与算法优化方案.md) | DeepSeek 独立自主：开源对标（pixel-mosaic/pyssla/Pindo 等）→ 四类合成测试样本 → 五维对比 → P0/P1/P2 问题分级 → 兼容现有管线的六个商用算法子方案（伪代码·阈值·挂接点·验收） |
 | [`docs/35-v1.2-P0-1修复任务书-Codex.md`](docs/35-v1.2-P0-1修复任务书-Codex.md) | P0-1（E1 空桶平滑亮度轴失效）Codex 实现任务书：精确两处改动 + §6.2 验收矩阵 + 可运行验证 harness（`.tools/bench/`，tsc→CJS→node）+ 实测基线（T1_photo maxDE≈44.7/reversals≈7）+ 交接/复核清单 |
 | [`docs/36-v1.2-P0-1修复自测报告.md`](docs/36-v1.2-P0-1修复自测报告.md) | P0-1 修复自测：两处权重 diff、harness before/after（T1 maxDE 44.69→36.81）、tsc/vitest 169/build 回归、T3 保持 0/8 |
+| [`docs/37-v1.2-去背景与劣化定位任务书-Codex.md`](docs/37-v1.2-去背景与劣化定位任务书-Codex.md) | 白底软阴影主体劣化定位（非 P0-1 所致；白底当内容/灰影 blob/近白头缺块）→ 一键去背景方案（`extractSubject`，边界洪水填充+edge-stop，像素化前，默认开可关）+ 主体盒 contain + 默认「图片模式」配置说明 + 交接/复核清单 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
 
 阶段 1 验收标准（已确认，供阶段 3 复核）：
