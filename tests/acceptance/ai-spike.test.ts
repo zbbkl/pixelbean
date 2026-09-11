@@ -1,4 +1,4 @@
-﻿/**
+/**
  * docs/45 §9 **S1 廉价否决点**：用 u2netp 对权威样例跑一次，只回答一个问题——
  * **掩码是否完整覆盖主体？** 不接入产品代码、不做 UI、不改默认行为。
  *
@@ -428,6 +428,12 @@ describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
     const pass1 = await infer(ort, session, source, DEFAULT_SIZE);
     const mask1 = upsampleMask(pass1, source.width, source.height);
     const stats1 = report('pass1-full320', mask1, pass1.elapsed, pass1);
+    // 落盘「模型原始输出掩码」（未上采样，DEFAULT_SIZE²）：将作为 CI 夹具，
+    // 让 S2 的后处理链即使在没装 onnxruntime / 没下 44MB 模型的环境里也能被测到。
+    writePng(
+      resolve(process.cwd(), OUT, `raw-mask-${tag}-${DEFAULT_SIZE}.png`),
+      maskToImage(pass1.small, DEFAULT_SIZE, DEFAULT_SIZE)
+    );
 
     // ---- 第 2 趟：按第 1 趟的 bbox 裁出主体（+12% 边距）等比缩到 320 再推理，细节分辨率翻倍 ----
     const bbox1 = stats1.bbox.split(',').map(Number);

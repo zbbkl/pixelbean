@@ -618,6 +618,104 @@ export function extractSubject(
   };
 }
 
+/** AI 语义掩码输入：`data` 为 1/0（也接受 >=128 视为主体的灰度/alpha）。 */
+export interface AIMaskInput {
+  width: number;
+  height: number;
+  data: Uint8Array;
+}
+
+/**
+ * 可选 AI 抠图路径：把「模型给出的语义掩码」接进**与 extractSubject 完全相同的契约与同一道可靠度门**。
+ *
+ * 上游（浏览器内 ONNX 推理）负责：按模型参数预处理（**每个模型的输入尺寸与 mean/std 不同**）、
+ * 推理、min-max 归一化后阈值化、输出 `AIMaskInput`。本函数只做确定性后处理：
+ * 掩码对齐到原图 → 回填小洞 / 丢小孤岛 → 指标与可靠度门 → B-4 despill。
+ *
+ * **红线对两条路径一致**：判不可信时同样回退全主体（等价未去背景），绝不吞主体、不产空图纸。
+ * 与确定性路径的差别：**不做** `refineMaskGuided`（实测对 AI 掩码只补回 7%，且有侵蚀风险）。
+ * 接触阴影按模型输出处理（当前三个候选模型都会排除接触阴影；这与 docs/39 把「主体下方一团灰影」
+ * 列为劣化项一致）。
+ */
+export function extractSubjectFromAIMask(
+  source: CellImage,
+  aiMask: AIMaskInput,
+  opts: SubjectOptions = {}
+): SubjectResult {
+  const width = source.width;
+  const height = source.height;
+  const data = source.data;
+  const length = width * height;
+  const minArea = opts.minArea ?? Math.max(8, Math.floor(length * SUBJECT_MIN_AREA_RATIO));
+  const holeMax = opts.holeMax ?? SUBJECT_HOLE_MAX;
+
+  const alignment = new Uint8Array(length);
+  for (let y = 0; y < height; y += 1) {
+    const my = Math.min(aiMask.height - 1, Math.floor((y * aiMask.height) / height));
+    for (let x = 0; x < width; x += 1) {
+      const mx = Math.min(aiMask.width - 1, Math.floor((x * aiMask.width) / width));
+      const value = aiMask.data[my * aiMask.width + mx];
+      const index = y * width + x;
+      if (value >= 128 || value === 1) {
+        // 源图自带透明处不算主体（与 extractSubject 口径一致）
+        if (data[index * 4 + 3] > 0) alignment[index] = 1;
+      }
+    }
+  }
+
+  const cleanedMask = dropTinyIslands(
+    fillSmallHoles(alignment, width, height, holeMax),
+    width,
+    height,
+    minArea
+  );
+  const metrics = subjectMetrics(cleanedMask, width, height);
+  const subjectRatio = metrics.subjectCount / length;
+  const largestComponentRatio = metrics.subjectCount
+    ? metrics.largestComponent / metrics.subjectCount
+    : 0;
+
+  const cells = new Uint8ClampedArray(data);
+  let x0 = Number.POSITIVE_INFINITY;
+  let y0 = Number.POSITIVE_INFINITY;
+  let x1 = Number.NEGATIVE_INFINITY;
+  let y1 = Number.NEGATIVE_INFINITY;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = y * width + x;
+      if (cleanedMask[index]) {
+        x0 = Math.min(x0, x);
+        y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x);
+        y1 = Math.max(y1, y);
+      } else {
+        cells[index * 4 + 3] = 0;
+      }
+    }
+  }
+  if (!Number.isFinite(x0)) {
+    return fallbackAllSubject(data, width, height, subjectRatio, largestComponentRatio);
+  }
+  const bboxRatio = ((x1 - x0 + 1) * (y1 - y0 + 1)) / length;
+  const reliable =
+    subjectRatio >= SUBJECT_RATIO_MIN &&
+    largestComponentRatio >= SUBJECT_COMPONENT_MIN &&
+    bboxRatio <= SUBJECT_BBOX_MAX;
+  if (!reliable) {
+    return fallbackAllSubject(data, width, height, subjectRatio, largestComponentRatio);
+  }
+  // B-4：去掉主体边缘残留的背景色
+  despillEdge(cells, cleanedMask, width, height);
+  return {
+    cells,
+    mask: cleanedMask,
+    bbox: { x0, y0, x1, y1 },
+    reliable: true,
+    subjectRatio,
+    largestComponentRatio
+  };
+}
+
 export function downsampleMask(
   mask: Uint8Array,
   srcWidth: number,
