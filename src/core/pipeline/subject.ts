@@ -21,6 +21,12 @@ export interface SubjectResult {
   /** 1=主体，0=背景（已抠出）。 */
   mask: Uint8Array;
   bbox: { x0: number; y0: number; x1: number; y1: number } | null;
+  /** A.2：抠图是否可信；false 时调用方必须按「未去背景」处理。 */
+  reliable: boolean;
+  /** 主体像素 / 全图像素。 */
+  subjectRatio: number;
+  /** 最大主体连通域 / 主体像素（「主体被打碎」的判据）。 */
+  largestComponentRatio: number;
 }
 
 export const SUBJECT_TOL = 13;
@@ -28,6 +34,12 @@ export const SUBJECT_EDGE = 18;
 export const SUBJECT_MIN_AREA_RATIO = 0.0002;
 export const SUBJECT_HOLE_MAX = 24;
 export const SUBJECT_ALPHA_THRESHOLD = 32;
+/** A.2 可信度门：主体占比下限（仅拦退化/空图，不误伤大画布上的小主体）。 */
+export const SUBJECT_RATIO_MIN = 0.02;
+/** A.2 可信度门：最大主体连通域占主体比例下限（拦「主体被打碎」＝吞掉近白主体）。 */
+export const SUBJECT_COMPONENT_MIN = 0.9;
+/** A.2 可信度门：主体包围盒占全幅上限（拦「几乎无背景可去」）。 */
+export const SUBJECT_BBOX_MAX = 0.98;
 
 function rgbAt(data: Uint8ClampedArray, offset: number): [number, number, number] {
   return [data[offset], data[offset + 1], data[offset + 2]];
@@ -279,6 +291,61 @@ function dropTinyIslands(mask: Uint8Array, width: number, height: number, minAre
   return output;
 }
 
+interface SubjectMetrics {
+  subjectCount: number;
+  largestComponent: number;
+}
+
+/** A.2：主体像素数与最大主体连通域（4 连通）。 */
+function subjectMetrics(mask: Uint8Array, width: number, height: number): SubjectMetrics {
+  const length = width * height;
+  const seen = new Uint8Array(length);
+  const stack: number[] = [];
+  let subjectCount = 0;
+  let largestComponent = 0;
+  for (let i = 0; i < length; i += 1) if (mask[i] === 1) subjectCount += 1;
+  for (let start = 0; start < length; start += 1) {
+    if (mask[start] !== 1 || seen[start]) continue;
+    let size = 0;
+    stack.length = 0;
+    stack.push(start);
+    seen[start] = 1;
+    while (stack.length) {
+      const at = stack.pop()!;
+      size += 1;
+      const x = at % width;
+      const y = Math.floor(at / width);
+      if (x > 0 && mask[at - 1] === 1 && !seen[at - 1]) { seen[at - 1] = 1; stack.push(at - 1); }
+      if (x < width - 1 && mask[at + 1] === 1 && !seen[at + 1]) { seen[at + 1] = 1; stack.push(at + 1); }
+      if (y > 0 && mask[at - width] === 1 && !seen[at - width]) { seen[at - width] = 1; stack.push(at - width); }
+      if (y < height - 1 && mask[at + width] === 1 && !seen[at + width]) { seen[at + width] = 1; stack.push(at + width); }
+    }
+    if (size > largestComponent) largestComponent = size;
+  }
+  return { subjectCount, largestComponent };
+}
+
+/**
+ * A.2 统一回退出口：判为「抠图不可信」时返回全主体（等价未去背景），
+ * 保证默认开启也绝不吞主体、不产空图纸。
+ */
+function fallbackAllSubject(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  subjectRatio: number,
+  largestComponentRatio: number
+): SubjectResult {
+  return {
+    cells: new Uint8ClampedArray(data),
+    mask: new Uint8Array(width * height).fill(1),
+    bbox: { x0: 0, y0: 0, x1: width - 1, y1: height - 1 },
+    reliable: false,
+    subjectRatio,
+    largestComponentRatio
+  };
+}
+
 /**
  * 像素化前的一键去背景：白底/纯色底照片用「边界背景色 + 梯度停止洪水」
  * 抠主体；已带透明背景的 PNG 沿 alpha 扩展背景。输出确定性纯函数。
@@ -304,13 +371,7 @@ export function extractSubject(
     const result = floodColorBackground(data, width, height, tol, edge);
     if (!result.reliable) {
       // 边界没有可辨识的连续背景：视作主体已经占满画布，不做误抠。
-      const all = new Uint8Array(length).fill(1);
-      const outAll = new Uint8ClampedArray(data);
-      return {
-        cells: outAll,
-        mask: all,
-        bbox: { x0: 0, y0: 0, x1: width - 1, y1: height - 1 }
-      };
+      return fallbackAllSubject(data, width, height, 1, 1);
     }
     background = result.bg;
   }
@@ -321,6 +382,12 @@ export function extractSubject(
   }
 
   const cleanedMask = dropTinyIslands(fillSmallHoles(mask, width, height, holeMax), width, height, minArea);
+  const metrics = subjectMetrics(cleanedMask, width, height);
+  const subjectRatio = metrics.subjectCount / length;
+  const largestComponentRatio = metrics.subjectCount
+    ? metrics.largestComponent / metrics.subjectCount
+    : 0;
+
   const cells = new Uint8ClampedArray(data);
   let x0 = Number.POSITIVE_INFINITY;
   let y0 = Number.POSITIVE_INFINITY;
@@ -339,10 +406,28 @@ export function extractSubject(
       }
     }
   }
-  const bbox = Number.isFinite(x0)
-    ? { x0, y0, x1, y1 }
-    : null;
-  return { cells, mask: cleanedMask, bbox };
+  if (!Number.isFinite(x0)) {
+    return fallbackAllSubject(data, width, height, subjectRatio, largestComponentRatio);
+  }
+
+  // A.2 可信度门：主体被打碎 / 占比过低 / 几乎无背景可去 → 判不可信，回退全主体。
+  const bboxRatio = ((x1 - x0 + 1) * (y1 - y0 + 1)) / length;
+  const reliable =
+    subjectRatio >= SUBJECT_RATIO_MIN &&
+    largestComponentRatio >= SUBJECT_COMPONENT_MIN &&
+    bboxRatio <= SUBJECT_BBOX_MAX;
+  if (!reliable) {
+    return fallbackAllSubject(data, width, height, subjectRatio, largestComponentRatio);
+  }
+
+  return {
+    cells,
+    mask: cleanedMask,
+    bbox: { x0, y0, x1, y1 },
+    reliable: true,
+    subjectRatio,
+    largestComponentRatio
+  };
 }
 
 export function downsampleMask(

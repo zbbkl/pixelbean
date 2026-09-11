@@ -28,7 +28,7 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outlineTau: 0.18,
     dither: 'none',
     protectFeatures: true,
-    removeBackground: true
+    removeBackground: false
   },
   cartoon: {
     targetMode: 'cartoon',
@@ -43,7 +43,7 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outlineTau: 0.18,
     dither: 'none',
     protectFeatures: true,
-    removeBackground: true
+    removeBackground: false
   },
   lineart: {
     targetMode: 'lineart',

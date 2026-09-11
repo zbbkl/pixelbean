@@ -53,7 +53,7 @@ export const defaultSettings: UiSettings = {
   outline: false,
   outlineTau: 0.18,
   protectFeatures: true,
-  removeBackground: true,
+  removeBackground: false,
   showCodes: true,
   showGridLines: true
 };

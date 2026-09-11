@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { convertPipeline } from '../../src/core/pipeline';
-import { downsampleMask, extractSubject } from '../../src/core/pipeline/subject';
+import { downsampleMask, extractSubject, SUBJECT_COMPONENT_MIN } from '../../src/core/pipeline/subject';
 import { loadPalette } from '../../src/core/palette/loader';
 import { countByColor, sumOccupied } from '../../src/core/pattern';
 import type { CellImage, ConvertOptions } from '../../src/types';
@@ -173,5 +173,55 @@ describe('removeBackground pipeline', () => {
     expect(pattern.cells[0]).toBe(-1);
     expect(sumOccupied(pattern)).toBeGreaterThan(15 * 15);
     expect(sumOccupied(pattern)).toBeLessThan(21 * 21);
+  });
+});
+
+describe('extractSubject 可信度门（A.2）', () => {
+  function rabbitLike(): CellImage {
+    const size = 240;
+    const image = makeImage(size, size, [250, 250, 250]);
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size * 0.36;
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        if (Math.hypot(x - cx, y - cy) <= r) setPx(image, x, y, [253, 252, 250]);
+      }
+    }
+    const rect = (x0: number, y0: number, w: number, h: number, c: [number, number, number]) => {
+      for (let y = y0; y < y0 + h; y += 1) {
+        for (let x = x0; x < x0 + w; x += 1) setPx(image, x, y, c);
+      }
+    };
+    rect(cx - 42, cy - 40, 16, 16, [230, 120, 160]);
+    rect(cx + 26, cy - 40, 16, 16, [230, 120, 160]);
+    rect(cx - 24, cy - 10, 10, 10, [35, 40, 48]);
+    rect(cx + 14, cy - 10, 10, 10, [35, 40, 48]);
+    rect(cx - 18, cy + 26, 36, 14, [40, 180, 180]);
+    return image;
+  }
+
+  it('近白主体被打碎时判不可信并回退全主体（不吞主体）', () => {
+    const result = extractSubject(rabbitLike());
+    expect(result.reliable).toBe(false);
+    expect(result.largestComponentRatio).toBeLessThan(SUBJECT_COMPONENT_MIN);
+    expect([...result.mask].every((v) => v === 1)).toBe(true);
+    expect(result.bbox).toEqual({ x0: 0, y0: 0, x1: 239, y1: 239 });
+  });
+
+  it('纯色图不产生空图纸（回退全主体）', () => {
+    const result = extractSubject(makeImage(60, 60, [220, 30, 30]));
+    expect([...result.mask].filter((v) => v === 1).length).toBe(60 * 60);
+  });
+
+  it('可信抠图：单一连通主体给出 reliable=true', () => {
+    const image = makeImage(60, 60, [255, 255, 255]);
+    for (let y = 20; y < 40; y += 1) {
+      for (let x = 20; x < 40; x += 1) setPx(image, x, y, [235, 196, 160]);
+    }
+    const result = extractSubject(image);
+    expect(result.reliable).toBe(true);
+    expect(result.largestComponentRatio).toBeGreaterThanOrEqual(SUBJECT_COMPONENT_MIN);
+    expect(result.mask[30 * 60 + 30]).toBe(1);
   });
 });

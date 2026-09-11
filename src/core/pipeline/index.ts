@@ -72,7 +72,10 @@ export function convertPipeline(
   regionCleanEnabled = false
 ): Pattern {
   const removeBackground = options.removeBackground === true;
-  const subject: SubjectResult | null = removeBackground ? extractSubject(source) : null;
+  const subjectRaw: SubjectResult | null = removeBackground ? extractSubject(source) : null;
+  // A.2：抠图不可信 → 完全按「未去背景」处理（等价 removeBackground=false），
+  // 保证默认开启也绝不吞主体、不产空图纸。
+  const subject: SubjectResult | null = subjectRaw && subjectRaw.reliable ? subjectRaw : null;
   let contentWidth = options.contain?.contentWidth ?? options.width;
   let contentHeight = options.contain?.contentHeight ?? options.height;
   let maskSource: Uint8Array | null = subject?.mask ?? null;

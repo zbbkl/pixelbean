@@ -48,7 +48,7 @@ describe('modePresets', () => {
       speckleMax: 2,
       outline: false,
       protectFeatures: true,
-      removeBackground: true
+      removeBackground: false
     });
   });
 

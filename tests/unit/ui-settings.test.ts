@@ -6,7 +6,7 @@ describe('target-mode custom linkage', () => {
     expect(defaultSettings).toMatchObject({
       targetMode: 'photo',
       mode: 'dominant',
-      removeBackground: true,
+      removeBackground: false,
       gridMode: 'long-edge',
       longEdge: 58,
       boardSide: 52,
@@ -22,7 +22,7 @@ describe('target-mode custom linkage', () => {
   it('opens in photo mode even when a saved draft targets another mode', () => {
     const startup = startupSettings({ targetMode: 'cartoon', maxColorsEnabled: true, maxColors: 24 });
     expect(startup.targetMode).toBe('photo');
-    expect(startup.removeBackground).toBe(true);
+    expect(startup.removeBackground).toBe(false);
     expect(startup.mode).toBe('dominant');
   });
 
