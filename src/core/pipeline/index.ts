@@ -176,6 +176,11 @@ export function convertPipeline(
   if (postActive && post) {
     pattern = runPostPipeline(pattern, palette, post, protect);
   }
+  // 仅在用户开启去背景时标注实际结果：界面据此在「不可信回退」时给出提示，
+  // 而不是静默什么都不做（关闭态不带该字段，保证关闭态输出与上一版逐格一致）。
+  if (removeBackground) {
+    pattern.backgroundRemoval = subject ? 'applied' : 'fallback';
+  }
   return pattern;
 }
 

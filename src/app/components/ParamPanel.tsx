@@ -1,4 +1,5 @@
 import { boardPresets, longEdgePresets } from '../boardPresets';
+import type { BackgroundRemovalOutcome } from '../../types';
 import type { UiSettings } from '../types';
 import type { PaletteSet } from '../../core/palette/types';
 import { applyMode, modeOptions, type NonCustomTargetMode } from '../../core/post/modePresets';
@@ -8,6 +9,8 @@ interface Props {
   settings: UiSettings;
   palettes: Record<string, PaletteSet>;
   onPatch: (patch: Partial<UiSettings>) => void;
+  /** 上一次转换的实际去背景结果（仅在用户开启开关时出现）。 */
+  backgroundRemoval?: BackgroundRemovalOutcome;
 }
 
 function NumberField({
@@ -40,7 +43,7 @@ function NumberField({
   );
 }
 
-export function ParamPanel({ settings, palettes, onPatch }: Props) {
+export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval }: Props) {
   const limitOn = settings.maxColorsEnabled;
   const ditherBlocked = limitOn || settings.shadowSimplify > 0;
   return (
@@ -162,6 +165,11 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
             <span>一键去背景</span>
           </label>
         </div>
+        {settings.removeBackground && backgroundRemoval === 'fallback' ? (
+          <p className="field-hint" role="status">
+            这张图没找到可分离的背景（主体与背景过于接近），已按「不去背景」出图。
+          </p>
+        ) : null}
         <div className="field-row">
           <label className="switch-field">
             <input

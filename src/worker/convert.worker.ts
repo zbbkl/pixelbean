@@ -25,7 +25,8 @@ worker.onmessage = (event: MessageEvent<ConvertRequest>) => {
         height: pattern.height,
         cells: pattern.cells.buffer as ArrayBuffer,
         codes: pattern.codes,
-        options: pattern.options
+        options: pattern.options,
+        backgroundRemoval: pattern.backgroundRemoval
       }
     };
     worker.postMessage(result, [pattern.cells.buffer]);

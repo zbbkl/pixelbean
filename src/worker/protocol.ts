@@ -1,4 +1,4 @@
-import type { ConvertOptions, PaletteId } from '../types';
+import type { BackgroundRemovalOutcome, ConvertOptions, PaletteId } from '../types';
 
 export interface ConvertRequest {
   seq: number;
@@ -19,6 +19,8 @@ export interface PatternPayload {
   cells: ArrayBuffer;
   codes: string[];
   options: ConvertOptions;
+  /** 仅在用户开启去背景时出现，见 types.ts 的 BackgroundRemovalOutcome。 */
+  backgroundRemoval?: BackgroundRemovalOutcome;
 }
 
 export interface ConvertResult {

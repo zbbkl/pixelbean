@@ -183,6 +183,32 @@ describe('removeBackground pipeline', () => {
     expect(sumOccupied(pattern)).toBeGreaterThan(15 * 15);
     expect(sumOccupied(pattern)).toBeLessThan(21 * 21);
   });
+
+  it('标注去背景实际结果：可信→applied、回退→fallback、关闭态不带该字段', () => {
+    const applied = convertPipeline(
+      hardSquare().image,
+      options(58, 58, { removeBackground: true }),
+      palette
+    );
+    expect(applied.backgroundRemoval).toBe('applied');
+
+    // 近白软边图判不可信 → 兜底回退，界面据此提示「已按不去背景出图」
+    const fallback = convertPipeline(
+      softWhiteSubject().image,
+      options(58, 58, { removeBackground: true }),
+      palette
+    );
+    expect(fallback.backgroundRemoval).toBe('fallback');
+
+    // 关闭态不带该字段（保证关闭态输出与上一版逐格一致，也避免污染 golden）
+    const off = convertPipeline(
+      hardSquare().image,
+      options(58, 58, { removeBackground: false }),
+      palette
+    );
+    expect(off.backgroundRemoval).toBeUndefined();
+    expect('backgroundRemoval' in off).toBe(false);
+  });
 });
 
 describe('extractSubject 可信度门（A.2）', () => {

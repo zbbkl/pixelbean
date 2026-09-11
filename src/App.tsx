@@ -70,7 +70,8 @@ export default function App() {
         height: message.pattern.height,
         cells: new Int16Array(message.pattern.cells),
         codes: message.pattern.codes,
-        options: message.pattern.options
+        options: message.pattern.options,
+        backgroundRemoval: message.pattern.backgroundRemoval
       };
       dispatch({ type: 'convertDone', pattern, signature: String(message.seq) });
     };
@@ -280,7 +281,12 @@ export default function App() {
             onImport={importPalette}
             onDelete={deletePalette}
           />
-          <ParamPanel settings={settings} palettes={state.palettes} onPatch={patchUi} />
+          <ParamPanel
+            settings={settings}
+            palettes={state.palettes}
+            onPatch={patchUi}
+            backgroundRemoval={state.pattern?.backgroundRemoval}
+          />
         </aside>
         <main className="center-column">
           <PreviewCanvas
