@@ -379,9 +379,125 @@ describe('去背景脊可分离性实测台', () => {
     console.log(`CAPABILITY 真实尺度(2%)软边可用档位: ${usable || '无'}`);
     expect(usable).not.toBe('');
   });
+
+  /**
+   * B-4「边缘无白边」的**可视证据**（docs/43 §0 的 B-4 门禁是目检）。
+   *
+   * 难点：权威样例与两张真实样例都走兜底回退、**压根没发生抠图**，所以那批截图/掩码
+   * 无法检验 despill。这里改用「抠图确实生效」的夹具，并把结果**合成到中灰底**上——
+   * 白边在灰底上才一眼可见。before = extractSubject 之前的原始像素（仅按 mask 置 alpha），
+   * after = 经 despillEdge 的输出。
+   */
+  it('B-4 despill 目检证据（EVIDENCE_DIR 时落盘，合成到中灰底）', () => {
+    const dir = process.env.EVIDENCE_DIR;
+    if (!dir) {
+      expect(true).toBe(true);
+      return;
+    }
+    // 硬边夹具的边缘像素与邻域同色 → 没有污染可去，despill 正确地不动手（实测 0px）。
+    // 因此**注入 1px 抗锯齿白边**（外圈向白底混 50%），这才是 B-4 要处理的对象。
+    const base = hardSquare();
+    const image: CellImage = {
+      width: base.image.width,
+      height: base.image.height,
+      data: new Uint8ClampedArray(base.image.data)
+    };
+    for (let y = 0; y < image.height; y += 1) {
+      for (let x = 0; x < image.width; x += 1) {
+        const index = y * image.width + x;
+        if (!base.truth[index]) continue;
+        const insideNeighbour =
+          x > 0 && x < image.width - 1 && y > 0 && y < image.height - 1 &&
+          base.truth[index - 1] && base.truth[index + 1] &&
+          base.truth[index - image.width] && base.truth[index + image.width];
+        if (insideNeighbour) continue;
+        const offset = index * 4;
+        for (let c = 0; c < 3; c += 1) {
+          image.data[offset + c] = Math.round(image.data[offset + c] * 0.5 + 255 * 0.5);
+        }
+      }
+    }
+    const result = extractSubject(image);
+    expect(result.reliable).toBe(true);
+    mkdirSync(dir, { recursive: true });
+    // before：按最终 mask 抠出的原图（未 despill）
+    const before = new Uint8ClampedArray(image.data.length);
+    for (let i = 0; i < base.truth.length; i += 1) {
+      const offset = i * 4;
+      before[offset] = image.data[offset];
+      before[offset + 1] = image.data[offset + 1];
+      before[offset + 2] = image.data[offset + 2];
+      before[offset + 3] = result.mask[i] ? image.data[offset + 3] : 0;
+    }
+    let changed = 0;
+    for (let i = 0; i < before.length; i += 4) {
+      if (!result.mask[i / 4]) continue;
+      if (
+        before[i] !== result.cells[i] ||
+        before[i + 1] !== result.cells[i + 1] ||
+        before[i + 2] !== result.cells[i + 2]
+      ) {
+        changed += 1;
+      }
+    }
+    writePng(resolve(dir, 'despill-before.png'), overGray(before, image.width, image.height));
+    writePng(resolve(dir, 'despill-after.png'), overGray(result.cells, image.width, image.height));
+    // 放大 8 倍裁左上角，使 1px 白边肉眼可见
+    const crop = 40;
+    writePng(resolve(dir, 'despill-zoom-before.png'), zoom(overGray(before, image.width, image.height), 60, 60, crop, crop, 8));
+    writePng(resolve(dir, 'despill-zoom-after.png'), zoom(overGray(result.cells, image.width, image.height), 60, 60, crop, crop, 8));
+    console.log(
+      `DESPILL 目检证据已落盘: ${dir}（despill-before/after.png + 8 倍放大 despill-zoom-before/after.png），被改动的边缘像素=${changed}px`
+    );
+    expect(changed).toBeGreaterThan(0);
+  });
 });
 
-/** S = floodable 集合脊峰值（剔除距 floodable 边界 ≤3px 的像素以避开特征边）；B = 深背景脊 p90。 */function signalToBackground(image: CellImage): {
+/** 最近邻放大裁剪（供 1px 级白边目检）。 */
+function zoom(
+  image: { width: number; height: number; data: Uint8ClampedArray },
+  x0: number,
+  y0: number,
+  w: number,
+  h: number,
+  scale: number
+): { width: number; height: number; data: Uint8ClampedArray } {
+  const out = new Uint8ClampedArray(w * scale * h * scale * 4);
+  for (let y = 0; y < h * scale; y += 1) {
+    for (let x = 0; x < w * scale; x += 1) {
+      const sx = Math.min(image.width - 1, x0 + Math.floor(x / scale));
+      const sy = Math.min(image.height - 1, y0 + Math.floor(y / scale));
+      const from = (sy * image.width + sx) * 4;
+      const to = (y * w * scale + x) * 4;
+      out[to] = image.data[from];
+      out[to + 1] = image.data[from + 1];
+      out[to + 2] = image.data[from + 2];
+      out[to + 3] = 255;
+    }
+  }
+  return { width: w * scale, height: h * scale, data: out };
+}
+
+/** 把带 alpha 的像素合成到中灰底（#808080），使残留白边一眼可见。 */
+function overGray(
+  cells: Uint8ClampedArray,
+  width: number,
+  height: number
+): { width: number; height: number; data: Uint8ClampedArray } {
+  const out = new Uint8ClampedArray(cells.length);
+  for (let i = 0; i < width * height; i += 1) {
+    const offset = i * 4;
+    const alpha = cells[offset + 3] / 255;
+    for (let c = 0; c < 3; c += 1) {
+      out[offset + c] = Math.round(cells[offset + c] * alpha + 128 * (1 - alpha));
+    }
+    out[offset + 3] = 255;
+  }
+  return { width, height, data: out };
+}
+
+/** S = floodable 集合脊峰值（剔除距 floodable 边界 ≤3px 的像素以避开特征边）；B = 深背景脊 p90。 */
+function signalToBackground(image: CellImage): {
   signal: number;
   background: number;
   floodable: number;
