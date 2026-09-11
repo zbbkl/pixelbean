@@ -156,6 +156,16 @@ export function ParamPanel({ settings, palettes, onPatch }: Props) {
           <label className="switch-field">
             <input
               type="checkbox"
+              checked={settings.removeBackground}
+              onChange={(event) => onPatch({ removeBackground: event.target.checked })}
+            />
+            <span>一键去背景</span>
+          </label>
+        </div>
+        <div className="field-row">
+          <label className="switch-field">
+            <input
+              type="checkbox"
               checked={settings.bg === 'white'}
               onChange={(event) => onPatch({ bg: event.target.checked ? 'white' : 'black' })}
             />

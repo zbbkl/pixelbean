@@ -3,7 +3,7 @@ import { ciede2000 } from '../color/ciede2000';
 import { srgbRgbToLab } from '../color/lab';
 import { adjustRgb } from '../color/adjust';
 import { linearRgbToSrgbByte, srgbByteToLinear } from '../color/srgb';
-import { downsample } from './downsample';
+import { downsample, type DownsampleOpts } from './downsample';
 import { classifyChromaFeature, CHROMA_DOT_MIN_TOTAL } from './chromaFeatures';
 
 export const FEATURE_REGION_MIN_PX = 8;
@@ -85,9 +85,14 @@ function regionRgb(
   data: Uint8ClampedArray,
   offset: number,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  transparentSource = false
 ): [number, number, number] {
   const alpha = data[offset + 3];
+  if (transparentSource && alpha > 0 && alpha < 255) {
+    const raw: [number, number, number] = [data[offset], data[offset + 1], data[offset + 2]];
+    return adjust ? adjustRgb(raw, adjust) : raw;
+  }
   if (alpha <= 0) return bg === 'white' ? [255, 255, 255] : [0, 0, 0];
   const raw: [number, number, number] = [data[offset], data[offset + 1], data[offset + 2]];
   let rgb: [number, number, number];
@@ -195,9 +200,11 @@ export function downsampleWithFeatures(
   height: number,
   mode: DownsampleMode,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  opts: DownsampleOpts = {}
 ): FeaturesResult {
-  const cells = downsample(image, width, height, mode, bg, adjust);
+  const transparentSource = opts.transparentSource === true;
+  const cells = downsample(image, width, height, mode, bg, adjust, opts);
   const protect = new Uint8Array(width * height);
   const { width: sw, height: sh, data } = image;
   const candidates = new Array<CellCandidate | null>(width * height);
@@ -213,7 +220,8 @@ export function downsampleWithFeatures(
         const row = y * sw * 4;
         for (let x = x0; x < x1; x += 1) {
           const offset = row + x * 4;
-          const rgb = regionRgb(data, offset, bg, adjust);
+          if (transparentSource && data[offset + 3] <= 0) continue;
+          const rgb = regionRgb(data, offset, bg, adjust, transparentSource);
           pixels.push({
             x: x - x0,
             row: y - y0,

@@ -8,7 +8,7 @@ export interface ModeOption {
 }
 
 export const modeOptions: ModeOption[] = [
-  { id: 'photo', label: '照片' },
+  { id: 'photo', label: '图片模式' },
   { id: 'cartoon', label: '卡通/插画' },
   { id: 'lineart', label: '线稿' },
   { id: 'pixel', label: '像素表情包' }
@@ -27,7 +27,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outline: false,
     outlineTau: 0.18,
     dither: 'none',
-    protectFeatures: true
+    protectFeatures: true,
+    removeBackground: true
   },
   cartoon: {
     targetMode: 'cartoon',
@@ -41,7 +42,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outline: true,
     outlineTau: 0.18,
     dither: 'none',
-    protectFeatures: true
+    protectFeatures: true,
+    removeBackground: true
   },
   lineart: {
     targetMode: 'lineart',
@@ -55,7 +57,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outline: false,
     outlineTau: 0.18,
     dither: 'none',
-    protectFeatures: false
+    protectFeatures: false,
+    removeBackground: false
   },
   pixel: {
     targetMode: 'pixel',
@@ -69,7 +72,8 @@ export const MODE_PRESETS: Record<NonCustomTargetMode, Partial<UiSettings>> = {
     outline: false,
     outlineTau: 0.18,
     dither: 'none',
-    protectFeatures: false
+    protectFeatures: false,
+    removeBackground: false
   }
 };
 

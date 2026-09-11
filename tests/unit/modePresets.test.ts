@@ -9,6 +9,7 @@ import { defaultSettings } from '../../src/app/state';
 describe('modePresets', () => {
   it('exposes the four one-click modes', () => {
     expect(modeOptions.map((option) => option.id)).toEqual(['photo', 'cartoon', 'lineart', 'pixel']);
+    expect(modeOptions.find((option) => option.id === 'photo')?.label).toBe('图片模式');
   });
 
   it('cartoon preset applies post-processing defaults', () => {
@@ -46,15 +47,18 @@ describe('modePresets', () => {
       speckleClean: false,
       speckleMax: 2,
       outline: false,
-      protectFeatures: true
+      protectFeatures: true,
+      removeBackground: true
     });
   });
 
   it('lineart and pixel use dominant sampling', () => {
     expect(MODE_PRESETS.lineart.mode).toBe('dominant');
     expect(MODE_PRESETS.lineart.maxColors).toBe(16);
+    expect(MODE_PRESETS.lineart.removeBackground).toBe(false);
     expect(MODE_PRESETS.pixel.mode).toBe('dominant');
     expect(MODE_PRESETS.pixel.maxColorsEnabled).toBe(false);
+    expect(MODE_PRESETS.pixel.removeBackground).toBe(false);
   });
 
   it('photo preset leaves dither at none for deterministic base', () => {

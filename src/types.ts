@@ -46,6 +46,7 @@ export interface UiSettings {
   outline: boolean;
   outlineTau: number;
   protectFeatures: boolean;
+  removeBackground: boolean;
   showCodes: boolean;
   showGridLines: boolean;
 }
@@ -62,6 +63,7 @@ export interface ConvertOptions {
   mode: DownsampleMode;
   maxColors: number | null;
   dither: DitherMode;
+  removeBackground?: boolean;
   adjust?: AdjustOptions;
   post?: PostOptions;
   features?: { enabled: boolean };

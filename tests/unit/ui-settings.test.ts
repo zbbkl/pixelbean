@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { applyUiSettingsPatch, defaultSettings, initialState, appReducer } from '../../src/app/state';
+import { applyUiSettingsPatch, defaultSettings, initialState, appReducer, startupSettings } from '../../src/app/state';
 
 describe('target-mode custom linkage', () => {
   it('defaults to the photo preset with the v1.2.1 profile', () => {
     expect(defaultSettings).toMatchObject({
       targetMode: 'photo',
       mode: 'dominant',
+      removeBackground: true,
       gridMode: 'long-edge',
       longEdge: 58,
       boardSide: 52,
@@ -16,6 +17,19 @@ describe('target-mode custom linkage', () => {
       outline: false,
       protectFeatures: true
     });
+  });
+
+  it('opens in photo mode even when a saved draft targets another mode', () => {
+    const startup = startupSettings({ targetMode: 'cartoon', maxColorsEnabled: true, maxColors: 24 });
+    expect(startup.targetMode).toBe('photo');
+    expect(startup.removeBackground).toBe(true);
+    expect(startup.mode).toBe('dominant');
+  });
+
+  it('keeps a manual remove-background off choice across a saved startup', () => {
+    const startup = startupSettings({ targetMode: 'cartoon', removeBackground: false });
+    expect(startup.targetMode).toBe('photo');
+    expect(startup.removeBackground).toBe(false);
   });
 
   it('keeps the current preset when a new preset is selected', () => {

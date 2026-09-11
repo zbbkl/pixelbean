@@ -41,6 +41,32 @@ function effectiveRgb(
   return adjust ? adjustRgb(rgb, adjust) : rgb;
 }
 
+export interface DownsampleOpts {
+  /** 若源图已把背景置 alpha=0，则跳过透明像素，避免被当白/黑垫底。 */
+  transparentSource?: boolean;
+  emptySmooth?: number;
+}
+
+function sampleRgb(
+  data: Uint8ClampedArray,
+  offset: number,
+  bg: BgMode,
+  adjust: AdjustOptions | undefined,
+  transparentSource: boolean
+): [number, number, number] | null {
+  const alpha = data[offset + 3];
+  if (transparentSource) {
+    if (alpha <= 0) return null;
+    const raw: [number, number, number] = [data[offset], data[offset + 1], data[offset + 2]];
+    return adjust ? adjustRgb(raw, adjust) : raw;
+  }
+  return effectiveRgb(data[offset], data[offset + 1], data[offset + 2], alpha, bg, adjust);
+}
+
+function emptyRgb(): [number, number, number] {
+  return [255, 255, 255];
+}
+
 function labFInverse(value: number): number {
   const cube = value ** 3;
   return cube > 216 / 24389
@@ -70,7 +96,8 @@ function averageRegionRgb(
   y0: number,
   y1: number,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  transparentSource = false
 ): [number, number, number] {
   let linR = 0;
   let linG = 0;
@@ -80,13 +107,15 @@ function averageRegionRgb(
     const row = y * sw * 4;
     for (let x = x0; x < x1; x += 1) {
       const offset = row + x * 4;
-      const rgb = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+      const rgb = sampleRgb(data, offset, bg, adjust, transparentSource);
+      if (!rgb) continue;
       linR += srgbByteToLinear(rgb[0]);
       linG += srgbByteToLinear(rgb[1]);
       linB += srgbByteToLinear(rgb[2]);
       n += 1;
     }
   }
+  if (!n) return emptyRgb();
   return linearRgbToSrgbByte([linR / n, linG / n, linB / n]);
 }
 
@@ -95,8 +124,10 @@ export function downsampleAverage(
   width: number,
   height: number,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  opts: DownsampleOpts = {}
 ): Uint8ClampedArray {
+  const transparentSource = opts.transparentSource === true;
   const { width: sw, height: sh, data } = image;
   const out = new Uint8ClampedArray(width * height * 4);
 
@@ -114,14 +145,16 @@ export function downsampleAverage(
         const row = y * sw * 4;
         for (let x = x0; x < x1; x += 1) {
           const offset = row + x * 4;
-          const [r, g, b] = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+          const rgb = sampleRgb(data, offset, bg, adjust, transparentSource);
+          if (!rgb) continue;
+          const [r, g, b] = rgb;
           linR += srgbByteToLinear(r);
           linG += srgbByteToLinear(g);
           linB += srgbByteToLinear(b);
           n += 1;
         }
       }
-      const [r, g, b] = linearRgbToSrgbByte([linR / n, linG / n, linB / n]);
+      const [r, g, b] = n ? linearRgbToSrgbByte([linR / n, linG / n, linB / n]) : emptyRgb();
       const cell = (gy * width + gx) * 4;
       out[cell] = r;
       out[cell + 1] = g;
@@ -148,8 +181,10 @@ export function downsampleDominant(
   width: number,
   height: number,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  opts: DownsampleOpts = {}
 ): Uint8ClampedArray {
+  const transparentSource = opts.transparentSource === true;
   const { width: sw, height: sh, data } = image;
   const out = new Uint8ClampedArray(width * height * 4);
 
@@ -164,7 +199,9 @@ export function downsampleDominant(
         const row = y * sw * 4;
         for (let x = x0; x < x1; x += 1) {
           const offset = row + x * 4;
-          const [r8, g8, b8] = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+          const rgb = sampleRgb(data, offset, bg, adjust, transparentSource);
+          if (!rgb) continue;
+          const [r8, g8, b8] = rgb;
           const r = srgbByteToLinear(r8);
           const g = srgbByteToLinear(g8);
           const b = srgbByteToLinear(b8);
@@ -223,9 +260,10 @@ export function downsampleDominantV2(
   height: number,
   bg: BgMode,
   adjust?: AdjustOptions,
-  opts: { emptySmooth?: number } = {}
+  opts: DownsampleOpts = {}
 ): Uint8ClampedArray {
   const emptySmooth = opts.emptySmooth ?? 0.5;
+  const transparentSource = opts.transparentSource === true;
   const { width: sw, height: sh, data } = image;
   const out = new Uint8ClampedArray(width * height * 4);
 
@@ -244,7 +282,8 @@ export function downsampleDominantV2(
         const row = y * sw * 4;
         for (let x = x0; x < x1; x += 1) {
           const offset = row + x * 4;
-          const rgb = effectiveRgb(data[offset], data[offset + 1], data[offset + 2], data[offset + 3], bg, adjust);
+          const rgb = sampleRgb(data, offset, bg, adjust, transparentSource);
+          if (!rgb) continue;
           const lab = srgbRgbToLab(rgb);
           const key = labBucket(lab);
           counts[key] += 1;
@@ -257,7 +296,7 @@ export function downsampleDominantV2(
 
       let rgb: [number, number, number];
       if (n < 4) {
-        rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust);
+        rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust, transparentSource);
       } else {
         let best = -1;
         let bestScore = Number.NEGATIVE_INFINITY;
@@ -293,7 +332,7 @@ export function downsampleDominantV2(
           }
         }
         if (best < 0) {
-          rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust);
+          rgb = averageRegionRgb(data, sw, x0, x1, y0, y1, bg, adjust, transparentSource);
         } else {
           rgb = labToSrgb([
             sumL[best] / counts[best],
@@ -318,9 +357,10 @@ export function downsample(
   height: number,
   mode: DownsampleMode,
   bg: BgMode,
-  adjust?: AdjustOptions
+  adjust?: AdjustOptions,
+  opts: DownsampleOpts = {}
 ): Uint8ClampedArray {
   return mode === 'dominant'
-    ? downsampleDominantV2(image, width, height, bg, adjust)
-    : downsampleAverage(image, width, height, bg, adjust);
+    ? downsampleDominantV2(image, width, height, bg, adjust, opts)
+    : downsampleAverage(image, width, height, bg, adjust, opts);
 }

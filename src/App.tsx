@@ -169,6 +169,7 @@ export default function App() {
     settings.outline,
     settings.outlineTau,
     settings.protectFeatures,
+    settings.removeBackground,
     settings.dither,
     settings.adjust
   ]);

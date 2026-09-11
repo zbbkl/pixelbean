@@ -67,6 +67,8 @@
 | [`docs/39-v1.2-去背景验收报告-ClaudeCode.md`](docs/39-v1.2-去背景验收报告-ClaudeCode.md) | Claude Code 独立验收**（结论：不通过）**：默认开启吞掉近白主体；白身白底软阴影图颜色洪水结构性失效（主体比背景更接近背景色/无强边缘），`tol×edge` 无解；P0/P1/P2 清单与处置建议 |
 | [`docs/40-v1.2-去背景验收修订与稳健方案.md`](docs/40-v1.2-去背景验收修订与稳健方案.md) | DeepSeek 修订：A 方案（止血=默认关闭+可信度兜底+兔子回归门禁，治空图纸/吞主体）；B 方案（稳健去背景=多尺度结构梯度引导，分级为独立后续，过门禁才可默认开启）；配置与交接/复核清单 |
 | [`docs/41-v1.2-去背景A+B实现任务书-Codex.md`](docs/41-v1.2-去背景A+B实现任务书-Codex.md) | A+B 实现级任务书：A=默认关闭+`reliable` 兜底+兔子回归门禁；B=多尺度结构梯度背景洪水（`innerMean vs ringMean`，s∈{2,4,8}）+主体装配；门禁 G1–G7 通过才默认开启；叠加/交付/复核清单 |
+| [`docs/42-去背景与图像转化开源调研借鉴笔记.md`](docs/42-去背景与图像转化开源调研借鉴笔记.md) | 开源调研（许可实取）：去背景 rembg(MIT)/imgly(AGPL❌)/grabcut(无证⚠️)；转化 pixel-mosaic/image_to_pixel_art_wasm(MIT)；经典算法（GrabCut/alpha matting/guided filter/saliency/量化）→ PixelBean 落地阶梯 B-1…B-5 + 许可证红线 |
+| [`docs/43-v1.2-去背景A+B代码执行方案-Codex.md`](docs/43-v1.2-去背景A+B代码执行方案-Codex.md) | **Codex 执行代码方案**：A（默认关闭 + `reliable` 兜底 + `fallbackAllSubject`）逐行 diff 与完整代码；B-1 多尺度 ridge（积分图）、B-2 guided filter 精修、B-4 边缘 despill 完整实现；合成夹具单测 + 真实样例门禁；执行顺序与可粘贴提示词 |
 | [`data/palette.schema.json`](data/palette.schema.json) | 色号表 JSON Schema（数据格式契约，随 docs/04 使用） |
 
 阶段 1 验收标准（已确认，供阶段 3 复核）：

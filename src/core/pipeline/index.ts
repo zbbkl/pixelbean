@@ -1,14 +1,69 @@
 import type { CellImage, ConvertOptions, Pattern } from '../../types';
 import type { LoadedPalette } from '../palette/types';
 import { placeContain } from './contain';
+import { deriveContainContent } from './geometry';
 import { ditherFloydSteinberg } from './dither';
 import { downsample } from './downsample';
 import { downsampleWithFeatures, placeProtectMask } from './features';
 import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
+import { downsampleMask, extractSubject, type SubjectResult } from './subject';
 import { isPostActive, runPostPipeline } from '../post';
 import { regionClean } from '../post/regionClean';
 import { mergeAdjacent } from '../post/merge';
+
+function clearBackgroundCells(pattern: Pattern, subjectMask: Uint8Array): Pattern {
+  let changed = false;
+  const cells = new Int16Array(pattern.cells);
+  for (let i = 0; i < cells.length; i += 1) {
+    if (cells[i] >= 0 && subjectMask[i] === 0) {
+      cells[i] = -1;
+      changed = true;
+    }
+  }
+  return changed ? { ...pattern, cells } : pattern;
+}
+
+function clearProtectOutside(protect: Uint8Array | null, subjectMask: Uint8Array): Uint8Array | null {
+  if (!protect) return null;
+  const out = new Uint8Array(protect);
+  for (let i = 0; i < out.length; i += 1) {
+    if (subjectMask[i] === 0) out[i] = 0;
+  }
+  return out;
+}
+
+function cropImage(image: CellImage, bbox: SubjectResult['bbox']): CellImage | null {
+  if (!bbox) return null;
+  const width = bbox.x1 - bbox.x0 + 1;
+  const height = bbox.y1 - bbox.y0 + 1;
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    const sourceRow = (bbox.y0 + y) * image.width * 4;
+    const targetRow = y * width * 4;
+    for (let x = 0; x < width; x += 1) {
+      const sourceOffset = sourceRow + (bbox.x0 + x) * 4;
+      const targetOffset = targetRow + x * 4;
+      data[targetOffset] = image.data[sourceOffset];
+      data[targetOffset + 1] = image.data[sourceOffset + 1];
+      data[targetOffset + 2] = image.data[sourceOffset + 2];
+      data[targetOffset + 3] = image.data[sourceOffset + 3];
+    }
+  }
+  return { width, height, data };
+}
+
+function cropMask(mask: Uint8Array, maskWidth: number, bbox: SubjectResult['bbox']): Uint8Array | null {
+  if (!bbox) return null;
+  const width = bbox.x1 - bbox.x0 + 1;
+  const height = bbox.y1 - bbox.y0 + 1;
+  const out = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    const sourceRow = (bbox.y0 + y) * maskWidth + bbox.x0;
+    out.set(mask.subarray(sourceRow, sourceRow + width), y * width);
+  }
+  return out;
+}
 
 export function convertPipeline(
   source: CellImage,
@@ -16,8 +71,29 @@ export function convertPipeline(
   palette: LoadedPalette,
   regionCleanEnabled = false
 ): Pattern {
-  const contentWidth = options.contain?.contentWidth ?? options.width;
-  const contentHeight = options.contain?.contentHeight ?? options.height;
+  const removeBackground = options.removeBackground === true;
+  const subject: SubjectResult | null = removeBackground ? extractSubject(source) : null;
+  let contentWidth = options.contain?.contentWidth ?? options.width;
+  let contentHeight = options.contain?.contentHeight ?? options.height;
+  let maskSource: Uint8Array | null = subject?.mask ?? null;
+  let sampleSource: CellImage;
+  if (subject?.bbox && options.contain) {
+    const bboxW = subject.bbox.x1 - subject.bbox.x0 + 1;
+    const bboxH = subject.bbox.y1 - subject.bbox.y0 + 1;
+    const box = deriveContainContent(bboxW, bboxH, options.width, options.height);
+    contentWidth = box.width;
+    contentHeight = box.height;
+    const cropped = cropImage(
+      { width: source.width, height: source.height, data: subject.cells },
+      subject.bbox
+    );
+    sampleSource = cropped ?? { width: source.width, height: source.height, data: subject.cells };
+    maskSource = cropMask(subject.mask, source.width, subject.bbox);
+  } else {
+    sampleSource = subject
+      ? { width: source.width, height: source.height, data: subject.cells }
+      : source;
+  }
   const contentOptions: ConvertOptions = {
     ...options,
     width: contentWidth,
@@ -30,25 +106,30 @@ export function convertPipeline(
   let protect: Uint8Array | null = null;
   if (featuresEnabled) {
     const featured = downsampleWithFeatures(
-      source,
+      sampleSource,
       contentWidth,
       contentHeight,
       options.mode,
       options.bg,
-      options.adjust
+      options.adjust,
+      removeBackground ? { transparentSource: true } : {}
     );
     sampled = featured.cells;
     protect = featured.protect;
   } else {
     sampled = downsample(
-      source,
+      sampleSource,
       contentWidth,
       contentHeight,
       options.mode,
       options.bg,
-      options.adjust
+      options.adjust,
+      removeBackground ? { transparentSource: true } : {}
     );
   }
+  const subjectMask = maskSource
+    ? downsampleMask(maskSource, sampleSource.width, sampleSource.height, contentWidth, contentHeight)
+    : null;
   const post = options.post;
   const postActive = isPostActive(post);
   const ditherRequested = options.dither === 'floyd-steinberg';
@@ -61,15 +142,21 @@ export function convertPipeline(
   };
 
   let pattern: Pattern;
+  let matchedDetails: ReturnType<typeof matchGridDetailed>['details'] | null = null;
   if (ditherRequested && !ditherPostConflict) {
     pattern = ditherFloydSteinberg(cellImage, palette, contentOptions);
     protect = null; // 抖动路径不消费特征掩码（docs/19 §1.1/§4.6）
   } else {
     const matched = matchGridDetailed(cellImage, palette, contentOptions);
     pattern = matched.pattern;
-    if (options.maxColors !== null && !postActive) {
-      pattern = limitColors(pattern, palette, options.maxColors, matched.details);
-    }
+    matchedDetails = matched.details;
+  }
+  if (subjectMask) {
+    pattern = clearBackgroundCells(pattern, subjectMask);
+    protect = clearProtectOutside(protect, subjectMask);
+  }
+  if (matchedDetails && options.maxColors !== null && !postActive) {
+    pattern = limitColors(pattern, palette, options.maxColors, matchedDetails);
   }
 
   const mergeEnabled = featuresEnabled && options.mode === 'dominant' && !postActive;
@@ -96,6 +183,7 @@ export * from './match';
 export * from './dither';
 export * from './colorLimit';
 export * from './contain';
+export * from './subject';
 export * from '../post';
 export * from '../post/regionClean';
 export * from '../post/merge';

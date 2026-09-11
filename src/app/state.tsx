@@ -1,6 +1,7 @@
 import { useReducer } from 'react';
 import type { Pattern } from '../types';
 import type { PaletteSet } from '../core/palette/types';
+import { applyMode } from '../core/post/modePresets';
 import type { HoverCell, SourceImage, UiSettings, ViewState } from './types';
 
 export interface AppState {
@@ -52,9 +53,24 @@ export const defaultSettings: UiSettings = {
   outline: false,
   outlineTau: 0.18,
   protectFeatures: true,
+  removeBackground: true,
   showCodes: true,
   showGridLines: true
 };
+
+/** 打开页面时强制进入图片（photo）模式；已保存的手动开关状态保留。 */
+export function startupSettings(saved: Partial<UiSettings> | undefined): UiSettings {
+  const merged: UiSettings = { ...defaultSettings, ...saved };
+  const photo = applyMode('photo', merged);
+  return {
+    ...merged,
+    ...photo,
+    adjust: merged.adjust,
+    removeBackground: merged.removeBackground,
+    showCodes: merged.showCodes,
+    showGridLines: merged.showGridLines
+  };
+}
 
 export function applyUiSettingsPatch(patch: Partial<UiSettings>): Partial<UiSettings> {
   if (patch.targetMode !== undefined && patch.targetMode !== 'custom') return patch;
@@ -148,7 +164,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         ...action.state,
-        settings: action.state.settings ? { ...defaultSettings, ...action.state.settings } : state.settings,
+        settings: action.state.settings ? startupSettings(action.state.settings) : state.settings,
         palettes: action.state.palettes ? { ...state.palettes, ...action.state.palettes } : state.palettes
       };
     default:
