@@ -96,8 +96,15 @@ export function rabbitLike(width = 240, height = 300, noise = 1.5): Fixture {
   return { image: { width, height, data }, truth };
 }
 
-/** docs/43 §4.1 原样夹具：白底白身软边 + 两只深色眼（无阴影，最苛刻）。 */
-export function softWhiteSubject(size = 240): Fixture {
+/**
+ * docs/43 §4.1 原样夹具：白底白身软边 + 两只深色眼（无阴影，最苛刻）。
+ *
+ * `edgeRatio` = 软边过渡带宽度 / 主体半径。默认 0.16 即 docs/43 §4.1 原样（d∈[0.92,1.08]）。
+ * **这个比例是决定 B-1 能否成立的隐藏变量**：脊的衰减尺度 ≈ 2·s_max = 16px，而屏障只能在
+ * 真实边缘之前停下，误差量级就是 16px。夹具取 0.16 时 16px 误差 ≈ 主体半径的 20%（放大失真）；
+ * 真实照片里软边通常只占主体半径的 1~2%，需要用它做尺度扫描（见 tests/acceptance/ridge-calibration）。
+ */
+export function softWhiteSubject(size = 240, edgeRatio = 0.16): Fixture {
   const data = new Uint8ClampedArray(size * size * 4);
   const truth = new Uint8Array(size * size);
   const bg: [number, number, number] = [250, 250, 250];
@@ -105,11 +112,12 @@ export function softWhiteSubject(size = 240): Fixture {
   const cx = size / 2;
   const cy = size / 2;
   const r = size * 0.34;
+  const mid = 1 - edgeRatio / 2;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const d = Math.hypot(x - cx, y - cy) / r;
-      const t = Math.min(1, Math.max(0, (d - 0.92) / 0.16));
-      if (d <= 0.96) truth[y * size + x] = 1;
+      const t = Math.min(1, Math.max(0, (d - mid) / edgeRatio));
+      if (d <= 1 - edgeRatio * 0.25) truth[y * size + x] = 1;
       data.set(
         [
           Math.round(body[0] * (1 - t) + bg[0] * t),
