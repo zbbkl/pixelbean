@@ -29,8 +29,16 @@ export interface SubjectResult {
   largestComponentRatio: number;
 }
 
-export const SUBJECT_TOL = 13;
-export const SUBJECT_EDGE = 18;
+/** B-0：颜色容差收紧（原 13 太松，纯颜色即可吞近白主体）。 */
+export const SUBJECT_TOL = 6;
+/** B-0：多尺度结构梯度脊阈值（原 18 配单像素梯度，软轮廓永不触发）。 */
+export const SUBJECT_EDGE = 12;
+/** B-0：脊的多尺度半窗半径。 */
+export const RIDGE_SCALES = [2, 4, 8] as const;
+/** B-0：引导滤波窗口半径。 */
+export const GUIDED_RADIUS = 4;
+/** B-0：引导滤波正则项（guide 归一化到 [0,1]）。 */
+export const GUIDED_EPS = 1e-3;
 export const SUBJECT_MIN_AREA_RATIO = 0.0002;
 export const SUBJECT_HOLE_MAX = 24;
 export const SUBJECT_ALPHA_THRESHOLD = 32;
@@ -182,21 +190,83 @@ function borderMedianLab(data: Uint8ClampedArray, width: number, height: number)
   return entries[Math.floor(entries.length / 2)].lab;
 }
 
-function maxNeighborDelta(
-  data: Uint8ClampedArray,
+/** B-1：（width+1）×（height+1）前缀和。 */
+function integralOf(values: Float64Array, width: number, height: number): Float64Array {
+  const W = width + 1;
+  const out = new Float64Array(W * (height + 1));
+  for (let y = 0; y < height; y += 1) {
+    let rowSum = 0;
+    for (let x = 0; x < width; x += 1) {
+      rowSum += values[y * width + x];
+      out[(y + 1) * W + (x + 1)] = out[y * W + (x + 1)] + rowSum;
+    }
+  }
+  return out;
+}
+
+/** 前缀和矩形求和；(x1,y1) 为开区间上界。 */
+function rectSum(
+  integral: Float64Array,
   width: number,
-  height: number,
-  at: number,
-  lab: readonly [number, number, number]
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number
 ): number {
-  const x = at % width;
-  const y = Math.floor(at / width);
-  let max = 0;
-  if (x > 0) max = Math.max(max, ciede76(lab, labAt(data, (at - 1) * 4)));
-  if (x < width - 1) max = Math.max(max, ciede76(lab, labAt(data, (at + 1) * 4)));
-  if (y > 0) max = Math.max(max, ciede76(lab, labAt(data, (at - width) * 4)));
-  if (y < height - 1) max = Math.max(max, ciede76(lab, labAt(data, (at + width) * 4)));
-  return max;
+  const W = width + 1;
+  return integral[y1 * W + x1] - integral[y0 * W + x1] - integral[y1 * W + x0] + integral[y0 * W + x0];
+}
+
+/**
+ * B-1 多尺度结构梯度脊：ridge(p) = max_s ΔE76( innerMean_s(p), ringMean_s(p) )。
+ * 软轮廓在粗尺度（s=4/8）仍成脊，补单像素梯度失效（docs/39 §4.3）。
+ * 用三通道前缀和在 O(w·h·|scales|) 内完成，确定性、无依赖。
+ */
+export function buildRidge(data: Uint8ClampedArray, width: number, height: number): Float64Array {
+  const length = width * height;
+  const L = new Float64Array(length);
+  const A = new Float64Array(length);
+  const B = new Float64Array(length);
+  for (let i = 0; i < length; i += 1) {
+    const lab = labAt(data, i * 4);
+    L[i] = lab[0];
+    A[i] = lab[1];
+    B[i] = lab[2];
+  }
+  const iL = integralOf(L, width, height);
+  const iA = integralOf(A, width, height);
+  const iB = integralOf(B, width, height);
+  const ridge = new Float64Array(length);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      let best = 0;
+      for (const s of RIDGE_SCALES) {
+        const inX0 = Math.max(0, x - s);
+        const inX1 = Math.min(width, x + s + 1);
+        const inY0 = Math.max(0, y - s);
+        const inY1 = Math.min(height, y + s + 1);
+        const outX0 = Math.max(0, x - 2 * s);
+        const outX1 = Math.min(width, x + 2 * s + 1);
+        const outY0 = Math.max(0, y - 2 * s);
+        const outY1 = Math.min(height, y + 2 * s + 1);
+        const nIn = (inX1 - inX0) * (inY1 - inY0);
+        const nOut = (outX1 - outX0) * (outY1 - outY0);
+        const nRing = nOut - nIn;
+        if (nIn <= 0 || nRing <= 0) continue;
+        const inL = rectSum(iL, width, inX0, inY0, inX1, inY1) / nIn;
+        const inA = rectSum(iA, width, inX0, inY0, inX1, inY1) / nIn;
+        const inB = rectSum(iB, width, inX0, inY0, inX1, inY1) / nIn;
+        // ring = 外窗 − 内窗；`inL * nIn` 即内窗 Lab 和。
+        const ringL = (rectSum(iL, width, outX0, outY0, outX1, outY1) - inL * nIn) / nRing;
+        const ringA = (rectSum(iA, width, outX0, outY0, outX1, outY1) - inA * nIn) / nRing;
+        const ringB = (rectSum(iB, width, outX0, outY0, outX1, outY1) - inB * nIn) / nRing;
+        const d = ciede76([inL, inA, inB], [ringL, ringA, ringB]);
+        if (d > best) best = d;
+      }
+      ridge[y * width + x] = best;
+    }
+  }
+  return ridge;
 }
 
 function floodColorBackground(
@@ -209,6 +279,8 @@ function floodColorBackground(
   const length = width * height;
   const bg = new Uint8Array(length);
   const bgLab = borderMedianLab(data, width, height);
+  // B-1：在软轮廓处形成多尺度结构梯度屏障（替换原单像素 maxNeighborDelta 判据）。
+  const ridge = buildRidge(data, width, height);
   const border = borderIndices(width, height);
   let seedCount = 0;
   for (const index of border) {
@@ -242,7 +314,7 @@ function floodColorBackground(
       if (data[offset + 3] < 128) continue;
       const lab = labAt(data, offset);
       if (ciede76(bgLab, lab) > tol) continue;
-      if (maxNeighborDelta(data, width, height, next, lab) > edge) continue;
+      if (ridge[next] > edge) continue;
       bg[next] = 1;
       stack[tail] = next;
       tail += 1;
@@ -264,6 +336,113 @@ function floodColorBackground(
     }
   }
   return { bg: dilated, reliable: true };
+}
+
+/** B-2 盒均值（前缀和，O(w·h)）。 */
+function boxMean(values: Float64Array, width: number, height: number, radius: number): Float64Array {
+  const integral = integralOf(values, width, height);
+  const out = new Float64Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const x0 = Math.max(0, x - radius);
+      const x1 = Math.min(width, x + radius + 1);
+      const y0 = Math.max(0, y - radius);
+      const y1 = Math.min(height, y + radius + 1);
+      out[y * width + x] = rectSum(integral, width, x0, y0, x1, y1) / ((x1 - x0) * (y1 - y0));
+    }
+  }
+  return out;
+}
+
+/**
+ * B-2 引导滤波掩码精修（He et al. 2010，O(N) 确定性，零依赖）。
+ * guide = 原图亮度；p = 二值掩码；输出 q >= 0.5 为掩码。
+ *
+ * 注意（实测，勿直接当最终掩码用）：q 是软 alpha，对**二值**掩码直接做 `q >= 0.5`
+ * 阈值化，在引导平坦处会退化为「掩码的盒均值 > 0.5」，即 radius 尺度的凸角/细结构侵蚀
+ * （实测 18×18 方块被啃掉 20 px）。本项目红线是绝不吞主体，因此 `extractSubject`
+ * 只取本函数的**主体侧恢复**（与原掩码取并集），收缩交给 B-1 的脊屏障。
+ */
+export function refineMaskGuided(
+  data: Uint8ClampedArray,
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  radius = GUIDED_RADIUS,
+  eps = GUIDED_EPS
+): Uint8Array {
+  const length = width * height;
+  const guide = new Float64Array(length);
+  const p = new Float64Array(length);
+  const gg = new Float64Array(length);
+  const gp = new Float64Array(length);
+  for (let i = 0; i < length; i += 1) {
+    const offset = i * 4;
+    guide[i] =
+      (0.2126 * data[offset] + 0.7152 * data[offset + 1] + 0.0722 * data[offset + 2]) / 255;
+    p[i] = mask[i] ? 1 : 0;
+    gg[i] = guide[i] * guide[i];
+    gp[i] = guide[i] * p[i];
+  }
+  const meanI = boxMean(guide, width, height, radius);
+  const meanP = boxMean(p, width, height, radius);
+  const meanGG = boxMean(gg, width, height, radius);
+  const meanGP = boxMean(gp, width, height, radius);
+  const a = new Float64Array(length);
+  const b = new Float64Array(length);
+  for (let i = 0; i < length; i += 1) {
+    const varI = meanGG[i] - meanI[i] * meanI[i];
+    const cov = meanGP[i] - meanI[i] * meanP[i];
+    a[i] = cov / (varI + eps);
+    b[i] = meanP[i] - a[i] * meanI[i];
+  }
+  const meanA = boxMean(a, width, height, radius);
+  const meanB = boxMean(b, width, height, radius);
+  const out = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    out[i] = meanA[i] * guide[i] + meanB[i] >= 0.5 ? 1 : 0;
+  }
+  return out;
+}
+
+/**
+ * B-4：主体边缘 despill —— 贴背景的主体像素若更接近背景色，用主体邻域中值色按强度混合，
+ * 去掉抠图后残留的一圈背景色（白边）。
+ */
+export function despillEdge(
+  cells: Uint8ClampedArray,
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  strength = 0.6
+): void {
+  const sub = new Uint8ClampedArray(cells);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = y * width + x;
+      if (!mask[index]) continue;
+      let touchesBg = false;
+      const samples: number[] = [];
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (!dx && !dy) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const n = ny * width + nx;
+          if (mask[n]) samples.push(n * 4);
+          else touchesBg = true;
+        }
+      }
+      if (!touchesBg || samples.length < 2) continue;
+      const off = index * 4;
+      for (let c = 0; c < 3; c += 1) {
+        const vals = samples.map((o) => sub[o + c]).sort((lhs, rhs) => lhs - rhs);
+        const median = vals[Math.floor(vals.length / 2)];
+        cells[off + c] = Math.round(sub[off + c] * (1 - strength) + median * strength);
+      }
+    }
+  }
 }
 
 function fillSmallHoles(mask: Uint8Array, width: number, height: number, holeMax: number): Uint8Array {
@@ -381,7 +560,14 @@ export function extractSubject(
     if (!background[i] && data[i * 4 + 3] > 0) mask[i] = 1;
   }
 
-  const cleanedMask = dropTinyIslands(fillSmallHoles(mask, width, height, holeMax), width, height, minArea);
+  // B-2：粗糙掩码先做引导滤波精修（只并集补回主体侧，不收缩——见 refineMaskGuided 注释），再丢小孤岛。
+  const roughMask = fillSmallHoles(mask, width, height, holeMax);
+  const guidedMask = refineMaskGuided(data, roughMask, width, height);
+  const refinedMask = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    refinedMask[i] = roughMask[i] || guidedMask[i] ? 1 : 0;
+  }
+  const cleanedMask = dropTinyIslands(refinedMask, width, height, minArea);
   const metrics = subjectMetrics(cleanedMask, width, height);
   const subjectRatio = metrics.subjectCount / length;
   const largestComponentRatio = metrics.subjectCount
@@ -409,6 +595,8 @@ export function extractSubject(
   if (!Number.isFinite(x0)) {
     return fallbackAllSubject(data, width, height, subjectRatio, largestComponentRatio);
   }
+  // B-4：去掉主体边缘残留的背景色（白边）。
+  despillEdge(cells, cleanedMask, width, height);
 
   // A.2 可信度门：主体被打碎 / 占比过低 / 几乎无背景可去 → 判不可信，回退全主体。
   const bboxRatio = ((x1 - x0 + 1) * (y1 - y0 + 1)) / length;

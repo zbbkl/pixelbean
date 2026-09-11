@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { convertPipeline } from '../../src/core/pipeline';
-import { downsampleMask, extractSubject, SUBJECT_COMPONENT_MIN } from '../../src/core/pipeline/subject';
+import {
+  buildRidge,
+  despillEdge,
+  downsampleMask,
+  extractSubject,
+  refineMaskGuided,
+  SUBJECT_COMPONENT_MIN,
+  SUBJECT_RATIO_MIN
+} from '../../src/core/pipeline/subject';
 import { loadPalette } from '../../src/core/palette/loader';
 import { countByColor, sumOccupied } from '../../src/core/pattern';
+import { hardSquare, rabbitLike, recovery, softWhiteSubject } from '../support/fixtures';
 import type { CellImage, ConvertOptions } from '../../src/types';
 
 function makeImage(width: number, height: number, fill: [number, number, number], alpha = 255): CellImage {
@@ -223,5 +232,166 @@ describe('extractSubject 可信度门（A.2）', () => {
     expect(result.reliable).toBe(true);
     expect(result.largestComponentRatio).toBeGreaterThanOrEqual(SUBJECT_COMPONENT_MIN);
     expect(result.mask[30 * 60 + 30]).toBe(1);
+  });
+});
+
+/**
+ * docs/43 §4：白底白身软边类图的**结果级红线门**。
+ * 这类图（docs/39 的核心失败样例）不允许出现「认了可信、但主体被吃掉大半」——
+ * 那正是 docs/39 P0「去背景变去主体」。允许的只有两种结局：
+ * ① 不可信 → 完全回退全主体（等价未去背景）；② 可信 → 主体基本保全。
+ */
+describe('extractSubject 门禁（docs/43 §4 软边/近白类图）', () => {
+  const cases = [
+    ['softWhiteSubject（§4.1 白底白身软边）', softWhiteSubject],
+    ['rabbitLike（白底白身 + 软阴影 + 噪点）', rabbitLike]
+  ] as const;
+
+  for (const [name, make] of cases) {
+    it(`不吞主体、不产空图纸：${name}`, () => {
+      const fixture = make();
+      const result = extractSubject(fixture.image);
+      const quality = recovery(result.mask, fixture.truth);
+
+      expect(result.mask.some((value) => value === 1)).toBe(true);
+      if (result.reliable) {
+        expect(quality.recovery).toBeGreaterThanOrEqual(0.9);
+      } else {
+        expect([...result.mask].every((value) => value === 1)).toBe(true);
+        expect(result.bbox).toEqual({
+          x0: 0,
+          y0: 0,
+          x1: fixture.image.width - 1,
+          y1: fixture.image.height - 1
+        });
+      }
+    });
+  }
+
+  it('可信时主体连通、覆盖中心且占比达标', () => {
+    const fixture = hardSquare();
+    const result = extractSubject(fixture.image);
+    expect(result.reliable).toBe(true);
+    expect(result.subjectRatio).toBeGreaterThanOrEqual(SUBJECT_RATIO_MIN);
+    expect(result.largestComponentRatio).toBeGreaterThan(0.9);
+    const center =
+      Math.floor(fixture.image.height / 2) * fixture.image.width +
+      Math.floor(fixture.image.width / 2);
+    expect(result.mask[center]).toBe(1);
+  });
+
+  it('硬边主体逐格精确：既不侵蚀也不外扩（B-2 接入方式的回归门）', () => {
+    const fixture = hardSquare();
+    const result = extractSubject(fixture.image);
+    let subject = 0;
+    let truth = 0;
+    let extra = 0;
+    for (let i = 0; i < fixture.truth.length; i += 1) {
+      if (result.mask[i]) subject += 1;
+      if (fixture.truth[i]) truth += 1;
+      else if (result.mask[i]) extra += 1;
+    }
+    expect(subject).toBe(truth);
+    expect(extra).toBe(0);
+  });
+});
+
+describe('B-1 多尺度结构脊', () => {
+  it('平坦背景不成脊', () => {
+    const image = makeImage(64, 64, [250, 250, 250]);
+    const ridge = buildRidge(image.data, 64, 64);
+    let max = 0;
+    for (const value of ridge) if (value > max) max = value;
+    expect(max).toBeLessThan(0.1);
+  });
+
+  it('宽软边成脊，且脊峰值落在过渡带内、远高于平坦区', () => {
+    const width = 96;
+    const height = 48;
+    const image = makeImage(width, height, [250, 250, 250]);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        if (x >= 60) setPx(image, x, y, [200, 200, 200]);
+        else if (x >= 36) {
+          const t = (x - 36) / 24;
+          const v = Math.round(250 - 50 * t);
+          setPx(image, x, y, [v, v, v]);
+        }
+      }
+    }
+    const ridge = buildRidge(image.data, width, height);
+    const at = (x: number, y: number) => ridge[y * width + x];
+    let flatMax = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < 24; x += 1) if (at(x, y) > flatMax) flatMax = at(x, y);
+    }
+    let bandMax = 0;
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 36; x < 60; x += 1) if (at(x, y) > bandMax) bandMax = at(x, y);
+    }
+    expect(flatMax).toBeLessThan(0.5);
+    expect(bandMax).toBeGreaterThan(1);
+    expect(bandMax).toBeGreaterThan(flatMax * 10);
+  });
+
+  it('脊屏障只可能保留像素（阈值越低，保留的主体越多）', () => {
+    const fixture = hardSquare();
+    const strict = extractSubject(fixture.image, { edge: 8 });
+    const loose = extractSubject(fixture.image, { edge: 12 });
+    let strictCount = 0;
+    let looseCount = 0;
+    for (let i = 0; i < strict.mask.length; i += 1) {
+      if (strict.mask[i]) strictCount += 1;
+      if (loose.mask[i]) looseCount += 1;
+    }
+    expect(strictCount).toBeGreaterThanOrEqual(looseCount);
+  });
+});
+
+describe('B-2 引导滤波掩码精修', () => {
+  it('平坦引导区直接阈值化会侵蚀掩码（故接入时只取并集，不收缩）', () => {
+    const width = 32;
+    const height = 32;
+    const image = makeImage(width, height, [250, 250, 250]);
+    const mask = new Uint8Array(width * height);
+    for (let y = 12; y < 20; y += 1) {
+      for (let x = 12; x < 20; x += 1) mask[y * width + x] = 1;
+    }
+    const refined = refineMaskGuided(image.data, mask, width, height);
+    let input = 0;
+    let output = 0;
+    for (let i = 0; i < mask.length; i += 1) {
+      if (mask[i]) input += 1;
+      if (refined[i]) output += 1;
+    }
+    expect(output).toBeLessThan(input);
+    expect(refined[12 * width + 12]).toBe(0);
+  });
+});
+
+describe('B-4 边缘 despill', () => {
+  it('贴背景的主体边缘像素按强度拉向主体中值色；内部与背景不动', () => {
+    const width = 7;
+    const height = 7;
+    const cells = new Uint8ClampedArray(width * height * 4).fill(255);
+    const mask = new Uint8Array(width * height);
+    for (let y = 2; y <= 4; y += 1) {
+      for (let x = 2; x <= 4; x += 1) {
+        const offset = (y * width + x) * 4;
+        cells[offset] = 235;
+        cells[offset + 1] = 196;
+        cells[offset + 2] = 160;
+        mask[y * width + x] = 1;
+      }
+    }
+    const corner = (2 * width + 2) * 4;
+    cells[corner] = 250;
+    cells[corner + 1] = 245;
+    cells[corner + 2] = 240;
+    despillEdge(cells, mask, width, height);
+    expect([cells[corner], cells[corner + 1], cells[corner + 2]]).toEqual([241, 216, 192]);
+    const interior = (3 * width + 3) * 4;
+    expect([cells[interior], cells[interior + 1], cells[interior + 2]]).toEqual([235, 196, 160]);
+    expect([cells[0], cells[1], cells[2]]).toEqual([255, 255, 255]);
   });
 });
