@@ -165,7 +165,8 @@ function sweep(label: string, image: CellImage, fixture: Fixture | null): void {
     const dir = process.env.EVIDENCE_DIR;
     if (dir) {
       mkdirSync(dir, { recursive: true });
-      writePng(resolve(dir, `cal-${label}-edge${edge}.png`), maskToImage(result.mask, image.width, image.height));
+      const safe = label.replace(/[^A-Za-z0-9_.-]/g, '_');
+      writePng(resolve(dir, `cal-${safe}-edge${edge}.png`), maskToImage(result.mask, image.width, image.height));
     }
   }
 }
@@ -242,10 +243,94 @@ describe('去背景脊可分离性实测台', () => {
   });
 
   /**
-   * 信号/背景噪声比预测器：S = floodable 集合内的脊峰值（近白类图里主体软轮廓就在这个集合内；
-   * 深色特征如眼睛因 ΔE>tol 被排除），B = 深背景脊 p90（洪水真正要穿越的背景结构）。
-   * 用它预测「是否存在可用阈值窗口」，并用夹具的已知成败验证这个预测器。
+   * 联合扫描（tol × edge）——只对 SUBJECT_SAMPLE 跑。
+   *
+   * 为什么必须联合：真实样例背景是「白→灰」渐变（ΔE≈33），tol=6 时洪水当场被颜色判据拦死
+   * （floodable 仅 20.7%），脊屏障根本没机会工作；而 tol 放开到能穿越整个背景渐变时，
+   * 近白主体又变得可通行，此时**只有脊屏障**能把它留下。二者只能一起定。
    */
+  it('联合扫描 tol × edge（SUBJECT_SAMPLE=path 时打印）', () => {
+    const sample = process.env.SUBJECT_SAMPLE;
+    if (!sample || !VERBOSE) {
+      expect(true).toBe(true);
+      return;
+    }
+    const path = resolve(process.cwd(), sample);
+    if (!existsSync(path)) {
+      expect(true).toBe(true);
+      return;
+    }
+    const image = readPng(path);
+    const area = image.width * image.height;
+    for (const tol of [6, 13, 20, 30, 45]) {
+      for (const edge of [0.3, 0.5, 1, 2, 4, 12]) {
+        const result = extractSubject(image, { tol, edge });
+        const stats = geometry(result.mask, image.width, image.height);
+        const bbox = result.bbox;
+        const bboxArea = bbox ? (bbox.x1 - bbox.x0 + 1) * (bbox.y1 - bbox.y0 + 1) : 0;
+        console.log(
+          `JOINT tol=${String(tol).padEnd(3)} edge=${String(edge).padEnd(5)} reliable=${String(result.reliable).padEnd(5)} ratio=${result.subjectRatio.toFixed(3)} comp=${result.largestComponentRatio.toFixed(3)} 分量=${String(stats.components).padStart(3)} 紧致度=${stats.compactness.toFixed(4)} bbox填充=${bboxArea ? (stats.pixels / bboxArea).toFixed(3) : '-'} bbox=${bbox ? `${bbox.x0},${bbox.y0},${bbox.x1},${bbox.y1}` : 'null'}`
+        );
+        const dir = process.env.EVIDENCE_DIR;
+        if (dir && result.reliable) {
+          mkdirSync(dir, { recursive: true });
+          writePng(
+            resolve(dir, `joint-tol${tol}-edge${edge}.png`),
+            maskToImage(result.mask, image.width, image.height)
+          );
+        }
+      }
+    }
+    expect(true).toBe(true);
+  });
+
+  /** 掩码几何：像素数、连通分量数（≥面积的 0.1%）、紧致度 4πA/P²（残块/锯齿会让它骤降）。 */
+  function geometry(mask: Uint8Array, width: number, height: number): { pixels: number; components: number; compactness: number } {
+    let pixels = 0;
+  let perimeter = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const at = y * width + x;
+      if (!mask[at]) continue;
+      pixels += 1;
+      if (x === 0 || !mask[at - 1]) perimeter += 1;
+      if (x === width - 1 || !mask[at + 1]) perimeter += 1;
+      if (y === 0 || !mask[at - width]) perimeter += 1;
+      if (y === height - 1 || !mask[at + width]) perimeter += 1;
+    }
+  }
+  const minSize = Math.max(4, Math.floor(pixels * 0.001));
+  const seen = new Uint8Array(mask.length);
+  const stack: number[] = [];
+  let components = 0;
+  for (let start = 0; start < mask.length; start += 1) {
+    if (!mask[start] || seen[start]) continue;
+    let size = 0;
+    stack.length = 0;
+    stack.push(start);
+    seen[start] = 1;
+    while (stack.length) {
+      const at = stack.pop()!;
+      size += 1;
+      const x = at % width;
+      const y = Math.floor(at / width);
+      const neighbours = [
+        x > 0 ? at - 1 : -1,
+        x < width - 1 ? at + 1 : -1,
+        y > 0 ? at - width : -1,
+        y < height - 1 ? at + width : -1
+      ];
+      for (const next of neighbours) {
+        if (next >= 0 && mask[next] && !seen[next]) {
+          seen[next] = 1;
+          stack.push(next);
+        }
+      }
+    }
+    if (size >= minSize) components += 1;
+  }
+  return { pixels, components, compactness: perimeter ? (4 * Math.PI * pixels) / (perimeter * perimeter) : 0 };
+}
   it('信号/背景噪声比（CALIBRATE=1 时打印）', () => {
     if (!VERBOSE) {
       expect(true).toBe(true);
@@ -296,8 +381,7 @@ describe('去背景脊可分离性实测台', () => {
   });
 });
 
-/** S = floodable 集合脊峰值（剔除距 floodable 边界 ≤3px 的像素以避开特征边）；B = 深背景脊 p90。 */
-function signalToBackground(image: CellImage): {
+/** S = floodable 集合脊峰值（剔除距 floodable 边界 ≤3px 的像素以避开特征边）；B = 深背景脊 p90。 */function signalToBackground(image: CellImage): {
   signal: number;
   background: number;
   floodable: number;

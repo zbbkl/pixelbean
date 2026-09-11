@@ -235,3 +235,52 @@ describe('去背景验收门禁 G1–G7（docs/41 §B.4 / docs/43 §4.3）', () 
     expect(MODE_PRESETS.cartoon.removeBackground).toBe(false);
   });
 });
+
+/**
+ * ★ 权威样例门禁。`tests/fixtures/rabbit-soft.png` 由 docs/37 指定的真实源图
+ * （1104×1424 白底软阴影兔，原件见 `tests/fixtures/rabbit-source.jpg`）按 1/4 线性降采样而来。
+ * 这是 docs/41 §B.4 G1–G4 唯一权威样例（此前缺文件，只能用替身）。
+ *
+ * 实测结论（docs/44 §12）：**G1–G4 未通过**。本文件只锁两件事——
+ * ① 红线：默认阈值下绝不产出「可信但被截断」的主体（只能全回退或整块保全）；
+ * ② 阳性对照：docs/39 的旧判据（tol=13/edge=18）必须被判不可信，证明这道门确实能抓住那个 P0。
+ */
+describe('★ 权威真实样例门禁（rabbit-soft.png）', () => {
+  const AUTHORITATIVE = 'tests/fixtures/rabbit-soft.png';
+
+  it('默认阈值：不吞主体、不产空图纸（红线）', () => {
+    const image = realSample(AUTHORITATIVE);
+    const subject = extractSubject(image);
+    let pixels = 0;
+    for (const value of subject.mask) if (value) pixels += 1;
+    console.log(
+      `AUTH rabbit-soft ${image.width}x${image.height} reliable=${subject.reliable} subjectRatio=${subject.subjectRatio.toFixed(3)} comp=${subject.largestComponentRatio.toFixed(3)} mask=${pixels}px bbox=${JSON.stringify(subject.bbox)}`
+    );
+
+    expect(pixels).toBeGreaterThan(0);
+    if (subject.reliable) {
+      // 认了可信就必须过 G1/G3（否则就是 docs/39 的「去背景变去主体」）
+      expect(subject.subjectRatio).toBeGreaterThan(0.2);
+      expect(subject.largestComponentRatio).toBeGreaterThan(0.9);
+    } else {
+      expect(pixels).toBe(image.width * image.height);
+    }
+  });
+
+  it('阳性对照：docs/39 旧判据（tol=13/edge=18）必须被判不可信', () => {
+    const image = realSample(AUTHORITATIVE);
+    const legacy = extractSubject(image, { tol: 13, edge: 18 });
+    console.log(
+      `AUTH legacy(tol13/edge18) reliable=${legacy.reliable} subjectRatio=${legacy.subjectRatio.toFixed(3)} comp=${legacy.largestComponentRatio.toFixed(3)}`
+    );
+    // 该组合就是 docs/39 实测「主体被吃掉」的配置：主体被打碎 / 占比过低 → 必须拦下
+    expect(legacy.reliable).toBe(false);
+  });
+
+  it('默认关闭下开启态不劣化（on == off）', () => {
+    const image = realSample(AUTHORITATIVE);
+    const on = convertPipeline(image, options({ removeBackground: true }), palette);
+    const off = convertPipeline(image, options({ removeBackground: false }), palette);
+    expect([...on.cells]).toEqual([...off.cells]);
+  });
+});
