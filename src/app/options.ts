@@ -48,6 +48,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
         maxColors: maxColorsEnabled ? maxColors : null,
         dither: settings.dither,
         removeBackground: settings.removeBackground,
+        aiBackground: settings.aiBackground,
         adjust: settings.adjust,
         post,
         ...features,
@@ -71,6 +72,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
       maxColors: maxColorsEnabled ? maxColors : null,
       dither: settings.dither,
       removeBackground: settings.removeBackground,
+      aiBackground: settings.aiBackground,
       adjust: settings.adjust,
       post,
       ...features

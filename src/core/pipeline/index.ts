@@ -1,4 +1,4 @@
-import type { CellImage, ConvertOptions, Pattern } from '../../types';
+﻿import type { CellImage, ConvertOptions, Pattern } from '../../types';
 import type { LoadedPalette } from '../palette/types';
 import { placeContain } from './contain';
 import { deriveContainContent } from './geometry';
@@ -7,7 +7,13 @@ import { downsample } from './downsample';
 import { downsampleWithFeatures, placeProtectMask } from './features';
 import { limitColors } from './colorLimit';
 import { matchGridDetailed } from './match';
-import { downsampleMask, extractSubject, type SubjectResult } from './subject';
+import {
+  downsampleMask,
+  extractSubject,
+  extractSubjectFromAIMask,
+  type AIMaskInput,
+  type SubjectResult
+} from './subject';
 import { isPostActive, runPostPipeline } from '../post';
 import { regionClean } from '../post/regionClean';
 import { mergeAdjacent } from '../post/merge';
@@ -69,10 +75,21 @@ export function convertPipeline(
   source: CellImage,
   options: ConvertOptions,
   palette: LoadedPalette,
-  regionCleanEnabled = false
+  regionCleanEnabled = false,
+  /**
+   * 可选 AI 抠图掩码（由 worker 内的 ONNX 推理给出，见 docs/45）。给了就走 AI 路径，
+   * 与确定性路径**共用同一道可靠度门与红线**。
+   */
+  aiMask: AIMaskInput | null = null
 ): Pattern {
-  const removeBackground = options.removeBackground === true;
-  const subjectRaw: SubjectResult | null = removeBackground ? extractSubject(source) : null;
+  // 「是否要抠图」与「用哪种算法」是两件事：UI 里两个开关互斥只是选择算法，
+  // 所以 aiBackground=true 而 removeBackground=false 时**仍然要抠图**（走 AI 掩码）。
+  const wantRemoval = options.removeBackground === true || options.aiBackground === true;
+  const subjectRaw: SubjectResult | null = wantRemoval
+    ? aiMask
+      ? extractSubjectFromAIMask(source, aiMask)
+      : extractSubject(source)
+    : null;
   // A.2：抠图不可信 → 完全按「未去背景」处理（等价 removeBackground=false），
   // 保证默认开启也绝不吞主体、不产空图纸。
   const subject: SubjectResult | null = subjectRaw && subjectRaw.reliable ? subjectRaw : null;
@@ -115,7 +132,7 @@ export function convertPipeline(
       options.mode,
       options.bg,
       options.adjust,
-      removeBackground ? { transparentSource: true } : {}
+      wantRemoval ? { transparentSource: true } : {}
     );
     sampled = featured.cells;
     protect = featured.protect;
@@ -127,7 +144,7 @@ export function convertPipeline(
       options.mode,
       options.bg,
       options.adjust,
-      removeBackground ? { transparentSource: true } : {}
+      wantRemoval ? { transparentSource: true } : {}
     );
   }
   const subjectMask = maskSource
@@ -178,8 +195,8 @@ export function convertPipeline(
   }
   // 仅在用户开启去背景时标注实际结果：界面据此在「不可信回退」时给出提示，
   // 而不是静默什么都不做（关闭态不带该字段，保证关闭态输出与上一版逐格一致）。
-  if (removeBackground) {
-    pattern.backgroundRemoval = subject ? 'applied' : 'fallback';
+  if (wantRemoval) {
+    pattern.backgroundRemoval = subject ? (aiMask ? 'applied-ai' : 'applied') : 'fallback';
   }
   return pattern;
 }
@@ -195,3 +212,4 @@ export * from './subject';
 export * from '../post';
 export * from '../post/regionClean';
 export * from '../post/merge';
+

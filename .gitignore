@@ -27,3 +27,7 @@ desktop.ini
 
 # local tooling (gh cli etc., never commit)
 .tools/
+
+# 可选 AI 抠图：自托管模型（部署时单独上传，不入库）
+/public/models/
+

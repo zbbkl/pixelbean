@@ -1,4 +1,4 @@
-/**
+﻿/**
  * docs/45 §9 **S1 廉价否决点**：用 u2netp 对权威样例跑一次，只回答一个问题——
  * **掩码是否完整覆盖主体？** 不接入产品代码、不做 UI、不改默认行为。
  *
@@ -148,8 +148,8 @@ interface Inference {
  * 直接喂 640 会被 ONNX Runtime 拒绝）、ImageNet 归一化、取输出 0、min-max 归一化后阈值 0.5。
  */
 async function infer(
-  ort: typeof import('onnxruntime-node'),
-  session: import('onnxruntime-node').InferenceSession,
+  ort: OrtLike,
+  session: OrtSessionLike,
   image: RasterImage,
   size: number,
   mean: number[] = MEAN,
@@ -365,9 +365,32 @@ function tintHoles(mask: Uint8Array, source: RasterImage): RasterImage {
 }
 
 
+/**
+ * onnxruntime-node **不是项目依赖**（用 `npm i --no-save` 临时装）。因此这里只用**结构化本地类型**，
+ * 不写 `typeof import('onnxruntime-node')`——那会让**干净检出**的仓库 `tsc --noEmit` 直接失败。
+ * 运行时用变量化 specifier 动态 import；未安装时由 `ready` 守卫整体 skip。
+ */
+interface OrtTensorLike {
+  data: Float32Array;
+}
+interface OrtSessionLike {
+  inputNames: string[];
+  outputNames: string[];
+  run(feeds: Record<string, unknown>): Promise<Record<string, OrtTensorLike>>;
+}
+interface OrtLike {
+  InferenceSession: { create(path: string): Promise<OrtSessionLike> };
+  Tensor: new (type: string, data: Float32Array, dims: number[]) => unknown;
+}
+
+async function loadOrtNode(): Promise<OrtLike> {
+  const moduleName = 'onnxruntime-node';
+  return (await import(/* @vite-ignore */ moduleName)) as unknown as OrtLike;
+}
+
 describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
   it('权威样例上跑一次，回答「掩码是否完整覆盖主体」', async () => {
-    const ort = await import('onnxruntime-node');
+    const ort = await loadOrtNode();
     const samplePath = SAMPLE_CANDIDATES.find((candidate) => existsSync(resolve(process.cwd(), candidate))) ?? SAMPLE_CANDIDATES[1];
     const modelPath = resolve(process.cwd(), MODEL);
     const hash = createHash('sha256').update(readFileSync(modelPath)).digest('hex');
@@ -517,7 +540,7 @@ describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
    * 目的：判断值不值得为「ISNet 的 170MB + 1024 输入」买单，还是「4.36MB + 后处理」就够。
    */
   it('u2netp vs isnet：差异区域定位 + 引导滤波补全能力', async () => {
-    const ort = await import('onnxruntime-node');
+    const ort = await loadOrtNode();
     const samplePath =
       SAMPLE_CANDIDATES.find((candidate) => existsSync(resolve(process.cwd(), candidate))) ??
       SAMPLE_CANDIDATES[1];
@@ -653,6 +676,7 @@ describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
     expect(missedPixels).toBeGreaterThanOrEqual(0);
   }, 900000);
 });
+
 
 
 

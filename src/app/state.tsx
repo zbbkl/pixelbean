@@ -54,6 +54,7 @@ export const defaultSettings: UiSettings = {
   outlineTau: 0.18,
   protectFeatures: true,
   removeBackground: false,
+  aiBackground: false,
   showCodes: true,
   showGridLines: true
 };
@@ -67,6 +68,7 @@ export function startupSettings(saved: Partial<UiSettings> | undefined): UiSetti
     ...photo,
     adjust: merged.adjust,
     removeBackground: merged.removeBackground,
+    aiBackground: merged.aiBackground,
     showCodes: merged.showCodes,
     showGridLines: merged.showGridLines
   };

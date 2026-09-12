@@ -20,7 +20,7 @@ import { exportPng, type PngMode } from './export/png';
 import { exportCsv } from './export/csv';
 import { copyStats } from './export/stats';
 import { printSheet } from './export/print';
-import type { ConvertError, ConvertResult } from './worker/protocol';
+import type { ConvertError, ConvertProgress, ConvertResult } from './worker/protocol';
 import type { MobileSection } from './app/types';
 
 const builtin = builtinPaletteSets as unknown as Record<string, PaletteSet>;
@@ -38,6 +38,11 @@ export default function App() {
   const [state, dispatch] = useAppState(builtin);
   const workerRef = useRef<Worker | null>(null);
   const seqRef = useRef(0);
+  /** AI 抠图进度（下载/校验/推理）；非 AI 路径或结束时为 null。 */
+  const [aiProgress, setAiProgress] = useState<{
+    stage: 'download' | 'verify' | 'inference';
+    ratio?: number;
+  } | null>(null);
   const restoredRef = useRef(false);
   const [workerReady, setWorkerReady] = useState(false);
   const [mobileSection, setMobileSection] = useState<MobileSection>('preview');
@@ -57,13 +62,22 @@ export default function App() {
 
   useEffect(() => {
     const worker = new Worker(new URL('./worker/convert.worker.ts', import.meta.url), { type: 'module' });
-    worker.onmessage = (event: MessageEvent<ConvertResult | ConvertError>) => {
+    worker.onmessage = (event: MessageEvent<ConvertResult | ConvertError | ConvertProgress>) => {
       const message = event.data;
       if (message.seq !== seqRef.current) return;
+      if (message.kind === 'progress') {
+        setAiProgress({
+          stage: message.stage,
+          ratio: message.total ? (message.loaded ?? 0) / message.total : undefined
+        });
+        return;
+      }
       if (message.kind === 'error') {
+        setAiProgress(null);
         dispatch({ type: 'convertError', message: message.message });
         return;
       }
+      setAiProgress(null);
       const pattern: Pattern = {
         paletteId: message.pattern.paletteId,
         width: message.pattern.width,
@@ -171,6 +185,7 @@ export default function App() {
     settings.outlineTau,
     settings.protectFeatures,
     settings.removeBackground,
+    settings.aiBackground,
     settings.dither,
     settings.adjust
   ]);
@@ -286,6 +301,7 @@ export default function App() {
             palettes={state.palettes}
             onPatch={patchUi}
             backgroundRemoval={state.pattern?.backgroundRemoval}
+            aiProgress={aiProgress}
           />
         </aside>
         <main className="center-column">

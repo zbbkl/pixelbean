@@ -12,6 +12,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
+import { convertPipeline } from '../../src/core/pipeline';
+import { loadPalette } from '../../src/core/palette/loader';
+import { sumOccupied } from '../../src/core/pattern';
 import {
   extractSubject,
   extractSubjectFromAIMask,
@@ -19,7 +22,7 @@ import {
   SUBJECT_RATIO_MIN
 } from '../../src/core/pipeline/subject';
 import { readPng } from '../support/png';
-import type { CellImage } from '../../src/types';
+import type { CellImage, ConvertOptions } from '../../src/types';
 
 const AUTHORITATIVE_IMAGE = 'tests/fixtures/rabbit-soft.png';
 const AI_MASK_FIXTURE = 'tests/fixtures/ai-mask-isnet-int8-rabbit-1024.png';
@@ -137,5 +140,101 @@ describe('AI 抠图路径（extractSubjectFromAIMask）', () => {
     expect([image.width, image.height]).toEqual([276, 356]);
     const result = extractSubjectFromAIMask(image, aiMask);
     expect(result.bbox).not.toBeNull();
+  });
+});
+
+describe('AI 抠图在管线里的接线（S2-b）', () => {
+  const palette = loadPalette({
+    schemaVersion: '1.0',
+    id: 'ai-gate',
+    label: 'AI gate',
+    brand: 'Test',
+    standard: '1',
+    quality: 'community-legacy',
+    source: 'test',
+    license: 'MIT',
+    colors: [
+      { code: 'WHITE', hex: '#FFFFFF', kind: 'solid' },
+      { code: 'BODY', hex: '#F7F3EE', kind: 'solid' },
+      { code: 'WARM', hex: '#EBC4A0', kind: 'solid' },
+      { code: 'DARK', hex: '#27313C', kind: 'solid' }
+    ]
+  });
+
+  const pipelineOptions = (extra: Partial<ConvertOptions> = {}): ConvertOptions => ({
+    paletteId: 'ai-gate',
+    width: 58,
+    height: 58,
+    bg: 'white',
+    mode: 'dominant',
+    maxColors: null,
+    dither: 'none',
+    ...extra
+  });
+
+  it('给了 aiMask → backgroundRemoval=applied-ai，且主体格数明显少于整板', () => {
+    const image = loadImage(AUTHORITATIVE_IMAGE);
+    const aiMask = loadMask(AI_MASK_FIXTURE);
+    const pattern = convertPipeline(
+      image,
+      pipelineOptions({ removeBackground: true, aiBackground: true }),
+      palette,
+      false,
+      aiMask
+    );
+    console.log(`PIPE ai 占用格=${sumOccupied(pattern)} outcome=${pattern.backgroundRemoval}`);
+    expect(pattern.backgroundRemoval).toBe('applied-ai');
+    expect(sumOccupied(pattern)).toBeGreaterThan(0);
+    expect(sumOccupied(pattern)).toBeLessThan(58 * 58);
+  });
+
+  it('AI 掩码不可信时同样回退（outcome=fallback，占用=整板）', () => {
+    const image = loadImage(AUTHORITATIVE_IMAGE);
+    const garbage = {
+      width: image.width,
+      height: image.height,
+      data: new Uint8Array(image.width * image.height)
+    };
+    const pattern = convertPipeline(
+      image,
+      pipelineOptions({ removeBackground: true, aiBackground: true }),
+      palette,
+      false,
+      garbage
+    );
+    expect(pattern.backgroundRemoval).toBe('fallback');
+    expect(sumOccupied(pattern)).toBe(58 * 58);
+  });
+
+  it('GA4：两个开关都关时逐格不变，且不带 outcome 字段', () => {
+    const image = loadImage(AUTHORITATIVE_IMAGE);
+    const plain = convertPipeline(image, pipelineOptions(), palette);
+    const explicitOff = convertPipeline(
+      image,
+      pipelineOptions({ removeBackground: false, aiBackground: false }),
+      palette
+    );
+    expect([...explicitOff.cells]).toEqual([...plain.cells]);
+    expect('backgroundRemoval' in plain).toBe(false);
+    expect('backgroundRemoval' in explicitOff).toBe(false);
+  });
+
+  it('AI 不可用（无掩码）时：aiBackground=true 落回确定性抠图，而不是不抠', () => {
+    const image = loadImage(AUTHORITATIVE_IMAGE);
+    const deterministic = convertPipeline(
+      image,
+      pipelineOptions({ removeBackground: true }),
+      palette
+    );
+    const aiWithoutMask = convertPipeline(
+      image,
+      pipelineOptions({ aiBackground: true }),
+      palette,
+      false,
+      null
+    );
+    // worker 在 AI 失败时正是这样兜底的（见 convert.worker.ts）
+    expect([...aiWithoutMask.cells]).toEqual([...deterministic.cells]);
+    expect(aiWithoutMask.backgroundRemoval).toBe(deterministic.backgroundRemoval);
   });
 });

@@ -11,6 +11,8 @@ interface Props {
   onPatch: (patch: Partial<UiSettings>) => void;
   /** 上一次转换的实际去背景结果（仅在用户开启开关时出现）。 */
   backgroundRemoval?: BackgroundRemovalOutcome;
+  /** AI 抠图进行中的进度（下载/校验/推理），无则为 null。 */
+  aiProgress?: { stage: 'download' | 'verify' | 'inference'; ratio?: number } | null;
 }
 
 function NumberField({
@@ -43,7 +45,7 @@ function NumberField({
   );
 }
 
-export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval }: Props) {
+export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval, aiProgress }: Props) {
   const limitOn = settings.maxColorsEnabled;
   const ditherBlocked = limitOn || settings.shadowSimplify > 0;
   return (
@@ -160,7 +162,13 @@ export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval }: P
             <input
               type="checkbox"
               checked={settings.removeBackground}
-              onChange={(event) => onPatch({ removeBackground: event.target.checked })}
+              onChange={(event) =>
+                // 与「AI 抠图」互斥：开这个就把那个关掉
+                onPatch({
+                  removeBackground: event.target.checked,
+                  aiBackground: event.target.checked ? false : settings.aiBackground
+                })
+              }
             />
             <span>一键去背景</span>
           </label>
@@ -169,6 +177,42 @@ export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval }: P
           <p className="field-hint" role="status">
             这张图没找到可分离的背景（主体与背景过于接近），已按「不去背景」出图。
           </p>
+        ) : null}
+        <div className="field-row">
+          <label className="switch-field">
+            <input
+              type="checkbox"
+              checked={settings.aiBackground}
+              onChange={(event) =>
+                onPatch({
+                  aiBackground: event.target.checked,
+                  removeBackground: event.target.checked ? false : settings.removeBackground
+                })
+              }
+            />
+            <span>AI 抠图（增强）· 首次需下载模型约 44MB</span>
+          </label>
+        </div>
+        {settings.aiBackground ? (
+          aiProgress ? (
+            <p className="field-hint" role="status">
+              {aiProgress.stage === 'download'
+                ? `正在下载 AI 模型… ${Math.round((aiProgress.ratio ?? 0) * 100)}%（约 44MB，仅首次）`
+                : aiProgress.stage === 'verify'
+                  ? '正在校验模型完整性…'
+                  : 'AI 正在抠图…'}
+            </p>
+          ) : backgroundRemoval === 'applied-ai' ? (
+            <p className="field-hint" role="status">
+              已用 AI 抠图出图。
+            </p>
+          ) : backgroundRemoval === 'fallback' ? (
+            <p className="field-hint" role="status">
+              AI 抠图没能给出可信的主体，已按「不去背景」出图。
+            </p>
+          ) : (
+            <p className="field-hint">首次使用需联网下载模型（约 44MB，之后离线可用）。</p>
+          )
         ) : null}
         <div className="field-row">
           <label className="switch-field">
