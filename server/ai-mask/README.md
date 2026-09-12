@@ -50,11 +50,14 @@ npm run build && 部署 dist（**不再包含模型**）
 ```bash
 systemctl status pixelbean-ai
 tail -f /var/log/pixelbean-ai.log        # 只记 路径/状态/耗时/模型/尺寸，不记像素
-curl -s http://127.0.0.1:8790/health     # { ok, models, loaded }
+curl -s http://127.0.0.1:8790/health     # { ok, model, served, loaded, switchAllowed, modelsOnDisk }
 ```
 
-可调环境变量（systemd 单元里加 `Environment=`）：`PORT`、`HOST`、`MODEL_DIR`、`MAX_BODY`、
+可调环境变量（systemd 单元里加 `Environment=`）：`MODEL_ID`（**本部署只服务这一个档位**）、
+`ALLOW_MODEL_SWITCH`（默认 `0`，见下）、`PORT`、`HOST`、`MODEL_DIR`、`MAX_BODY`、
 `CONCURRENCY`、`QUEUE_LIMIT`、`RATE_LIMIT`、`WASM_THREADS`、`ORT_WASM_DIR`。
+
+> ⚠️ 改 `MODEL_ID` 时**前端 `src/worker/aiMaskClient.ts` 的 `AI_MODELS` 要同步**（否则客户端请求的 id 与服务端不符 → 400 → 自动落回确定性抠图）。
 
 ## 性能（目标服务器：2 核 / 3.4GB）
 
@@ -63,7 +66,22 @@ curl -s http://127.0.0.1:8790/health     # { ok, models, loaded }
 | `u2net-quality`（默认） | u2net fp32 @320² | **3.64s** | 792MB |
 | `u2netp-fast` | u2netp @320² | **1.45s** | 389MB |
 
-**同一时刻只保留一个会话（LRU=1）**：换档位时换入换出（加载 0.7–1.4s），内存因此恒定，两个档位可并存。
+**同一时刻只服务一个档位（默认锁定，`ALLOW_MODEL_SWITCH=0`）**。最初实现的是「LRU=1 换入换出」，
+实测**每切换一次内存涨 100~200MB**（旧 onnxruntime-web 会话的 WASM 堆不真正释放）：
+
+| 事件 | RSS/current | cgroup 峰值 |
+|---|---|---|
+| 启动 + 首次推理 | 884MB | — |
+| 切到另一档位 ×1 | 957MB | — |
+| 切回再切 ×3（共 5 次切换） | 1133MB | **1266MB**（上限 1363MB） |
+
+⇒ 再切几次就会被 OOM-kill，且整机 `available` 一度低到 623MB（同机还有 mysqld）。
+修复：① 默认锁定单模型，请求别的 id 明确返回 **400**；② 释放旧会话时显式 `session.release?.()`；
+③ 加 2GB `/swapfile` + `vm.swappiness=10` 兜底。
+
+修复后实测：连续 8 次同一模型，**峰值恒定 940MB**（`current` 782→796MB），整机 `available` 回升到 1180MB，swap 0 使用。
+
+需要多档位的部署：换更大内存的机器，并显式 `ALLOW_MODEL_SWITCH=1`（并接受内存随切换持续增长，建议配 `RuntimeMaxSec` 定期重启）。
 
 ## 验收
 

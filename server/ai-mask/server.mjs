@@ -10,13 +10,21 @@
  *     body = RGBA 原始字节（size × size × 4，客户端已解码并缩放到模型输入尺寸）
  *     200  = 掩码原始字节（size × size，每字节 0/1）
  *     400/413/429/503 = 参数错误 / 过大 / 限流 / 忙
- *   GET /health → { ok, models, loaded }
+ *   GET /health → { ok, model, served, loaded, switchAllowed, modelsOnDisk }
  *
- * 设计约束（这台服务器只有 2 核 / 3.4GB，且还跑着别的服务）：
- *   - 常驻只保留**一个**模型会话（换模型时换入换出），内存恒定；
+ * 设计约束（这台服务器只有 2 核 / 3.4GB，还跑着 mysqld 等别的服务）：
+ *   - **只加载一个模型，运行时不切换**（见 `MODEL_ID` 与 `ALLOW_MODEL_SWITCH`）；
  *   - 并发上限 1 + 队列上限 4，超出直接 503（宁可快速失败，不拖垮同机服务）；
  *   - 单 IP 限流；
  *   - **不落盘**：像素只在内存中处理，请求结束即释放，日志只记状态/耗时/模型/尺寸。
+ *
+ * ⚠️ **实测教训（2026-09）**：最初为支持两个档位实现了「LRU=1 换入换出」，实测**每切换一次内存涨 100~200MB**
+ * （旧 onnxruntime-web 会话的 WASM 堆并未真正释放）：884 → 957 → 1133MB，峰值 1266MB，
+ * 而 cgroup 上限只有 1300MiB ⇒ 再切几次就会被 OOM 杀掉，且整机 available 一度掉到 623MB。
+ * ⇒ 默认**锁定单模型**：请求其它模型 id 明确返回 400，而不是偷偷再加载一份。
+ * 需要多档位的部署请换更大内存的机器，并显式设 `ALLOW_MODEL_SWITCH=1`（并接受内存持续增长）。
+ * 另加了 2GB `/swapfile`（`vm.swappiness=10`）作为兜底：正常路径不该用到它，只是让极端情况下
+ * 内核有回旋余地、不至于直接 OOM-kill（同机还有 mysqld 等更要紧的服务）。
  *
  * 运行：node server.mjs（默认 127.0.0.1:8790，仅由 nginx 反代暴露）
  */
@@ -32,6 +40,10 @@ const CONCURRENCY = Number(process.env.CONCURRENCY ?? 1);
 const QUEUE_LIMIT = Number(process.env.QUEUE_LIMIT ?? 4);
 const RATE_LIMIT = Number(process.env.RATE_LIMIT ?? 40); // 每 IP 每分钟
 const RATE_WINDOW_MS = 60_000;
+/** 本部署只提供这一个模型（见文件头「实测教训」）。 */
+const PINNED_MODEL = process.env.MODEL_ID ?? 'u2net-quality';
+/** 仅在大内存机器上显式开启；开启后允许运行时切换（会持续吃内存）。 */
+const ALLOW_MODEL_SWITCH = process.env.ALLOW_MODEL_SWITCH === '1';
 
 /** 模型表：预处理参数（mean/std）在**服务端**，客户端只需按 inputSize 缩放并送 RGBA。 */
 const MODELS = {
@@ -50,12 +62,12 @@ const MODELS = {
     std: [0.229, 0.224, 0.225]
   }
 };
-const DEFAULT_MODEL = 'u2net-quality';
+const DEFAULT_MODEL = PINNED_MODEL;
 
 ort.env.wasm.numThreads = Number(process.env.WASM_THREADS ?? 2);
 ort.env.wasm.wasmPaths = process.env.ORT_WASM_DIR ?? '/opt/pixelbean-ai/node_modules/onnxruntime-web/dist/';
 
-/** 常驻一个会话（LRU=1）：内存恒定，换模型时换入换出。 */
+/** 常驻会话。默认**只有一个**（= PINNED_MODEL），运行时不切换，内存恒定。 */
 let loaded = null; // { id, session }
 let queue = 0;
 const rate = new Map(); // ip -> number[]（时间戳）
@@ -71,6 +83,10 @@ function rateLimited(ip) {
 
 async function sessionFor(id) {
   if (loaded?.id === id) return loaded.session;
+  // 默认不允许切换：避免「换入换出」时旧会话内存不释放导致内存单调增长（见文件头实测教训）
+  if (loaded && !ALLOW_MODEL_SWITCH) {
+    throw Object.assign(new Error(`本部署只提供 ${loaded.id}（运行时切换已禁用）`), { status: 400 });
+  }
   const spec = MODELS[id];
   const started = Date.now();
   const session = await ort.InferenceSession.create(readFileSync(spec.file), {
@@ -78,7 +94,16 @@ async function sessionFor(id) {
     graphOptimizationLevel: 'all'
   });
   console.log(`[model] 载入 ${id}（${((Date.now() - started) / 1000).toFixed(2)}s）`);
-  loaded = { id, session }; // 释放旧会话（不再被引用，交由 GC）
+  if (loaded) {
+    // 仅在显式允许切换时才走到这里；尽力释放旧会话
+    try {
+      await loaded.session.release?.();
+    } catch (error) {
+      console.warn(`[model] 释放 ${loaded.id} 失败：${error?.message ?? error}`);
+    }
+    console.warn(`[model] 已切换模型（内存会持续增长，见 docs/47 §8）`);
+  }
+  loaded = { id, session };
   return session;
 }
 
@@ -125,7 +150,20 @@ const server = createServer(async (req, res) => {
   };
 
   if (url.pathname === '/health') {
-    reply(200, JSON.stringify({ ok: true, models: Object.keys(MODELS), loaded: loaded?.id ?? null }), 'application/json');
+    // 只上报**实际服务**的档位；磁盘上存在的其他权重不算可服务（切换默认关闭）。
+    const served = ALLOW_MODEL_SWITCH ? Object.keys(MODELS) : [PINNED_MODEL];
+    reply(
+      200,
+      JSON.stringify({
+        ok: true,
+        model: PINNED_MODEL,
+        served,
+        loaded: loaded?.id ?? null,
+        switchAllowed: ALLOW_MODEL_SWITCH,
+        modelsOnDisk: Object.keys(MODELS)
+      }),
+      'application/json'
+    );
     return;
   }
   if (url.pathname !== '/mask' || req.method !== 'POST') {

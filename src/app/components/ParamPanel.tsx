@@ -196,19 +196,22 @@ export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval, aiP
         </div>
         {settings.aiBackground ? (
           <>
-            <div className="field-row">
-              <span className="field-label-inline">抠图模型</span>
-              <select
-                value={settings.aiModel}
-                onChange={(event) => onPatch({ aiModel: event.target.value })}
-              >
-                {AI_MODELS.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* 单档位部署不显示选择器（运行时不支持换模型，见 aiMaskClient 注释）。 */}
+            {AI_MODELS.length > 1 ? (
+              <div className="field-row">
+                <span className="field-label-inline">抠图模型</span>
+                <select
+                  value={settings.aiModel}
+                  onChange={(event) => onPatch({ aiModel: event.target.value })}
+                >
+                  {AI_MODELS.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             {aiProgress ? (
               <p className="field-hint" role="status">
                 AI 正在抠图…（图片已发送到服务器计算）

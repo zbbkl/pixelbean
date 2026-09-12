@@ -21,10 +21,13 @@ export interface AiModelOption {
   inputSize: number;
 }
 
-/** 与服务端 `MODELS` 表保持一致；`app` 侧只用到 id/label/inputSize。 */
+/**
+ * 本部署**只提供一档**（与服务端 `MODEL_ID` 对应）。刻意不开放运行时切换：
+ * 实测 onnxruntime-web 换会话时旧 WASM 堆不释放，每切一次内存涨 100~200MB（见 docs/47 §8）。
+ * 若你的部署用别的 `MODEL_ID`，把这里改成同一个 id 即可；多档位需要更大内存的机器。
+ */
 export const AI_MODELS: AiModelOption[] = [
-  { id: 'u2net-quality', label: '高质量（u2net，约 4 秒）', inputSize: 320 },
-  { id: 'u2netp-fast', label: '快速（u2netp，约 2 秒）', inputSize: 320 }
+  { id: 'u2net-quality', label: '高质量（u2net）', inputSize: 320 }
 ];
 
 export const DEFAULT_AI_MODEL_ID = 'u2net-quality';
