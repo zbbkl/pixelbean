@@ -29,14 +29,19 @@ async function handle(request: ConvertRequest): Promise<void> {
     let aiFailed = false;
     if (request.options.aiBackground === true) {
       try {
-        aiMask = await runAiMask(source, AI_MODEL_ISNET_INT8, (progress: AiProgress) =>
-          post({
-            seq: request.seq,
-            kind: 'progress',
-            stage: progress.stage,
-            loaded: progress.stage === 'download' ? progress.loaded : undefined,
-            total: progress.stage === 'download' ? progress.total : undefined
-          })
+        aiMask = await runAiMask(
+          source,
+          AI_MODEL_ISNET_INT8,
+          (progress: AiProgress) =>
+            post({
+              seq: request.seq,
+              kind: 'progress',
+              stage: progress.stage,
+              loaded: progress.stage === 'download' ? progress.loaded : undefined,
+              total: progress.stage === 'download' ? progress.total : undefined
+            }),
+          // 资源基址由主线程给出（支持子路径部署）；缺省退回 worker 自身所在目录
+          request.assetBase ?? self.location.href
         );
       } catch (error) {
         aiFailed = true;

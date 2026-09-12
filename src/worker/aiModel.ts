@@ -11,12 +11,12 @@
  */
 import type { AIMaskInput } from '../core/pipeline/subject';
 
-/** 模型档位。`url` 是自托管路径（部署时单独上传，不入 git）。 */
+/** 模型档位。`path` 是**相对资源基址**的路径（部署在子路径时必须相对，见 §12.3 说明）。 */
 export interface AiModelSpec {
   id: string;
   label: string;
-  url: string;
-  /** 期望的字节数（下载完整性初筛）与 sha256（强校验）。 */
+  path: string;
+  /** 期望的字节数（下载完整性初筛）与 sha256（强校验，仅安全上下文可用）。 */
   bytes: number;
   sha256: string;
   /** 该模型固定的输入边长。 */
@@ -32,7 +32,7 @@ export interface AiModelSpec {
 export const AI_MODEL_ISNET_INT8: AiModelSpec = {
   id: 'isnet-general-use-int8',
   label: 'ISNet-int8（44MB）',
-  url: '/models/isnet-general-use-int8.onnx',
+  path: 'models/isnet-general-use-int8.onnx',
   bytes: 46_360_717,
   sha256: 'f1b1c6f7656e532627697afc989d953be1e7ef8f55a718f3611e8c9fd50cdef7',
   inputSize: 1024,
@@ -78,8 +78,19 @@ async function loadOrt(): Promise<OrtModule> {
   return ortPromise;
 }
 
-async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+/**
+ * SHA-256 十六进制。**注意：`crypto.subtle` 只在安全上下文（HTTPS / localhost）可用**，
+ * 而本站可能部署在 `http://<ip>/子路径`。这种情况下退化为「只校验字节数」并给出警告——
+ * 因为在同一个明文 HTTP 通道上，哈希本身也会被一并篡改，强校验在此并不提供额外保护。
+ * 线上建议启用 HTTPS（见 docs/08 与 docs/46 §5）。
+ */
+async function sha256Hex(bytes: ArrayBuffer): Promise<string | null> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle?.digest) {
+    console.warn('[AI 抠图] 当前不是安全上下文（HTTPS/localhost），无法做 sha256 校验，改为仅校验文件大小。');
+    return null;
+  }
+  const digest = await subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest))
     .map((value) => value.toString(16).padStart(2, '0'))
     .join('');
@@ -91,24 +102,29 @@ export type AiProgress =
   | { stage: 'inference' };
 
 /**
- * 取模型字节：Cache Storage 命中直接用；未命中则带进度下载并**校验 sha256** 后写入缓存。
- * 校验不通过 → 抛错并丢弃（绝不用来路不明的权重）。
+ * 取模型字节：Cache Storage 命中直接用；未命中则带进度下载并**校验 sha256**（安全上下文下）
+ * 后写入缓存。校验不通过 → 抛错并丢弃（绝不用来路不明的权重）。
  */
 async function loadModelBytes(
   spec: AiModelSpec,
+  modelUrl: string,
   onProgress: (progress: AiProgress) => void
 ): Promise<ArrayBuffer> {
   const cache = 'caches' in self ? await caches.open(CACHE_NAME) : null;
-  const cached = await cache?.match(spec.url);
+  const valid = async (bytes: ArrayBuffer): Promise<boolean> => {
+    const hex = await sha256Hex(bytes);
+    if (hex === null) return bytes.byteLength === spec.bytes; // 非安全上下文：只能查大小
+    return hex.startsWith(spec.sha256.slice(0, 32));
+  };
+
+  const cached = await cache?.match(modelUrl);
   if (cached) {
     const bytes = await cached.arrayBuffer();
-    if (await sha256Hex(bytes).then((hex) => hex.startsWith(spec.sha256.slice(0, 32)))) {
-      return bytes;
-    }
-    await cache?.delete(spec.url);
+    if (await valid(bytes)) return bytes;
+    await cache?.delete(modelUrl);
   }
 
-  const response = await fetch(spec.url);
+  const response = await fetch(modelUrl);
   if (!response.ok) throw new Error(`模型下载失败（HTTP ${response.status}）`);
   const total = Number(response.headers.get('content-length') ?? spec.bytes);
   const reader = response.body?.getReader();
@@ -136,11 +152,10 @@ async function loadModelBytes(
   }
   onProgress({ stage: 'verify' });
   const buffer = merged.buffer as ArrayBuffer;
-  const hex = await sha256Hex(buffer);
-  if (!hex.startsWith(spec.sha256.slice(0, 32))) {
-    throw new Error('模型校验失败（sha256 不匹配），已丢弃');
+  if (!(await valid(buffer))) {
+    throw new Error('模型校验失败（大小或 sha256 不匹配），已丢弃');
   }
-  await cache?.put(spec.url, new Response(buffer.slice(0)));
+  await cache?.put(modelUrl, new Response(buffer.slice(0)));
   return buffer;
 }
 
@@ -178,14 +193,22 @@ function resizeBilinear(
 
 /**
  * 跑一次 AI 抠图，返回 0/1 掩码（尺寸 = inputSize²，交由 `extractSubjectFromAIMask` 对齐到原图）。
+ *
+ * `assetBase` 是**资源基址**（主线程传入 `document.baseURI`）：本站可能部署在子路径
+ * （例如 `http://host/pixelbean/`），模型路径必须相对它解析，否则会打到域名根上去。
  * 任何异常都向上抛（离线/后端不可用/推理失败），调用方必须落回现有行为。
  */
 export async function runAiMask(
   source: { width: number; height: number; data: Uint8ClampedArray },
   spec: AiModelSpec,
-  onProgress: (progress: AiProgress) => void
+  onProgress: (progress: AiProgress) => void,
+  assetBase: string
 ): Promise<AIMaskInput> {
-  const [ort, modelBytes] = await Promise.all([loadOrt(), loadModelBytes(spec, onProgress)]);
+  const modelUrl = new URL(spec.path, assetBase).href;
+  const [ort, modelBytes] = await Promise.all([
+    loadOrt(),
+    loadModelBytes(spec, modelUrl, onProgress)
+  ]);
   onProgress({ stage: 'inference' });
 
   const session = await ort.InferenceSession.create(new Uint8Array(modelBytes), {

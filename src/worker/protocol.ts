@@ -10,6 +10,11 @@ export interface ConvertRequest {
   };
   options: ConvertOptions;
   palette: unknown;
+  /**
+   * 资源基址（主线程的 `document.baseURI`）。AI 抠图据此解析模型路径——
+   * 本站可能部署在子路径（如 `/pixelbean/`），用绝对路径 `/models/...` 会打错目标。
+   */
+  assetBase?: string;
 }
 
 export interface PatternPayload {

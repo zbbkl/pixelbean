@@ -155,7 +155,9 @@ export default function App() {
             kind: 'convert',
             source: { width: source.width, height: source.height, data },
             options: resolved.options,
-            palette: currentPalette
+            palette: currentPalette,
+            // AI 抠图据此解析模型路径（支持子路径部署，见 worker/protocol.ts）
+            assetBase: document.baseURI
           },
           [data]
         );
