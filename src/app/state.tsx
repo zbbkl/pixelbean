@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+﻿import { useReducer } from 'react';
 import type { Pattern } from '../types';
 import type { PaletteSet } from '../core/palette/types';
 import { applyMode } from '../core/post/modePresets';
@@ -55,6 +55,7 @@ export const defaultSettings: UiSettings = {
   protectFeatures: true,
   removeBackground: false,
   aiBackground: false,
+  aiModel: 'u2net-quality',
   showCodes: true,
   showGridLines: true
 };
@@ -69,6 +70,7 @@ export function startupSettings(saved: Partial<UiSettings> | undefined): UiSetti
     adjust: merged.adjust,
     removeBackground: merged.removeBackground,
     aiBackground: merged.aiBackground,
+    aiModel: merged.aiModel ?? defaultSettings.aiModel,
     showCodes: merged.showCodes,
     showGridLines: merged.showGridLines
   };
@@ -177,3 +179,5 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 export function useAppState(initialPalettes: Record<string, PaletteSet>) {
   return useReducer(appReducer, initialPalettes, initialState);
 }
+
+

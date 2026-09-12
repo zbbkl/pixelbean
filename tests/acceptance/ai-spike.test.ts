@@ -389,6 +389,33 @@ async function loadOrtNode(): Promise<OrtLike> {
 }
 
 describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
+  /**
+   * 诊断：u2net 系 ONNX 有多个输出（d0…d6），而管线只取 `outputNames[0]`。
+   * 若顺序不保证，掩码就会取错头 —— 直接污染模型对比结论。先把各模型输入/输出列清楚。
+   */
+  it('诊断：各模型的输入/输出名与数量', async () => {
+    const ort = await loadOrtNode();
+    const names = [
+      'u2netp.onnx',
+      'u2net.onnx',
+      'u2net-int8.onnx',
+      'isnet-general-use.onnx',
+      'isnet-general-use-int8.onnx'
+    ];
+    for (const name of names) {
+      const path = resolve(process.cwd(), '.tools/ai-spike', name);
+      if (!existsSync(path)) {
+        console.log(`MODELS ${name}: 缺失，跳过`);
+        continue;
+      }
+      const session = await ort.InferenceSession.create(path);
+      console.log(
+        `MODELS ${name}: inputs=[${session.inputNames.join(', ')}] outputs(${session.outputNames.length})=[${session.outputNames.join(', ')}]`
+      );
+    }
+    expect(true).toBe(true);
+  }, 300000);
+
   it('权威样例上跑一次，回答「掩码是否完整覆盖主体」', async () => {
     const ort = await loadOrtNode();
     const samplePath = SAMPLE_CANDIDATES.find((candidate) => existsSync(resolve(process.cwd(), candidate))) ?? SAMPLE_CANDIDATES[1];
@@ -551,8 +578,9 @@ describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
     const sizeB = Number(process.env.AI_SIZE_B ?? 1024);
     const meanA = (process.env.AI_MEAN_A ?? '0.485,0.456,0.406').split(',').map(Number);
     const stdA = (process.env.AI_STD_A ?? '0.229,0.224,0.225').split(',').map(Number);
-    const meanB = (process.env.AI_MEAN_B ?? '0.5,0.5,0.5').split(',').map(Number);
-    const stdB = (process.env.AI_STD_B ?? '1,1,1').split(',').map(Number);
+    // 默认与 A 一致（ImageNet）；测 ISNet 时必须显式传 AI_MEAN_B=0.5,0.5,0.5 
+    const meanB = (process.env.AI_MEAN_B ?? process.env.AI_MEAN ?? '0.485,0.456,0.406').split(',').map(Number);
+    const stdB = (process.env.AI_STD_B ?? process.env.AI_STD ?? '0.229,0.224,0.225').split(',').map(Number);
     const tagA = modelA.split(/[\\/]/).pop()!.replace(/\.onnx$/, '');
     const tagB = modelB.split(/[\\/]/).pop()!.replace(/\.onnx$/, '');
     const smallModel = resolve(process.cwd(), modelA);
@@ -676,6 +704,7 @@ describe.skipIf(!ready)('AI 抠图 S1 spike（u2netp）', () => {
     expect(missedPixels).toBeGreaterThanOrEqual(0);
   }, 900000);
 });
+
 
 
 

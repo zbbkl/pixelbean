@@ -49,6 +49,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
         dither: settings.dither,
         removeBackground: settings.removeBackground,
         aiBackground: settings.aiBackground,
+        aiModel: settings.aiModel,
         adjust: settings.adjust,
         post,
         ...features,
@@ -73,6 +74,7 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
       dither: settings.dither,
       removeBackground: settings.removeBackground,
       aiBackground: settings.aiBackground,
+      aiModel: settings.aiModel,
       adjust: settings.adjust,
       post,
       ...features
@@ -83,3 +85,4 @@ export function resolveRequest(source: SourceImage, settings: UiSettings): Resol
 export function gridCellCount(resolved: ResolvedRequest): number {
   return resolved.options.width * resolved.options.height;
 }
+

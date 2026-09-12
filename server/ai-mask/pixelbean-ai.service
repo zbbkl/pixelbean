@@ -1,0 +1,19 @@
+[Unit]
+Description=PixelBean AI mask service (server-side ONNX inference, onnxruntime-web WASM)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/pixelbean-ai
+ExecStart=/usr/bin/node /opt/pixelbean-ai/server.mjs
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+# 这台机器 3.4GB 且跑着别的服务：给本服务设上限，避免拖垮同机应用
+MemoryMax=1300M
+CPUQuota=180%
+StandardOutput=append:/var/log/pixelbean-ai.log
+StandardError=append:/var/log/pixelbean-ai.log
+
+[Install]
+WantedBy=multi-user.target

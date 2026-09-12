@@ -49,6 +49,8 @@ export interface UiSettings {
   removeBackground: boolean;
   /** 可选 AI 抠图（增强）：首次需下载模型；与 removeBackground 互斥。 */
   aiBackground: boolean;
+  /** AI 抠图档位 id（见 worker/aiModel.ts 的 AI_MODELS）；未设置时用默认档。 */
+  aiModel: string;
   showCodes: boolean;
   showGridLines: boolean;
 }
@@ -68,6 +70,8 @@ export interface ConvertOptions {
   removeBackground?: boolean;
   /** 可选 AI 抠图：由 worker 内的 ONNX 推理给出掩码（见 docs/45）；与 removeBackground 互斥。 */
   aiBackground?: boolean;
+  /** AI 抠图档位（见 worker/aiModel.ts 的 AI_MODELS）。 */
+  aiModel?: string;
   adjust?: AdjustOptions;
   post?: PostOptions;
   features?: { enabled: boolean };

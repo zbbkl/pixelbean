@@ -4,6 +4,7 @@ import type { UiSettings } from '../types';
 import type { PaletteSet } from '../../core/palette/types';
 import { applyMode, modeOptions, type NonCustomTargetMode } from '../../core/post/modePresets';
 import { MAX_COLOR_STEPS } from '../options';
+import { AI_MODELS } from '../../worker/aiMaskClient';
 
 interface Props {
   settings: UiSettings;
@@ -190,29 +191,42 @@ export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval, aiP
                 })
               }
             />
-            <span>AI 抠图（增强）· 首次需下载模型约 44MB</span>
+            <span>AI 抠图（增强）· 图片会上传到服务器计算</span>
           </label>
         </div>
         {settings.aiBackground ? (
-          aiProgress ? (
-            <p className="field-hint" role="status">
-              {aiProgress.stage === 'download'
-                ? `正在下载 AI 模型… ${Math.round((aiProgress.ratio ?? 0) * 100)}%（约 44MB，仅首次）`
-                : aiProgress.stage === 'verify'
-                  ? '正在校验模型完整性…'
-                  : 'AI 正在抠图…'}
-            </p>
-          ) : backgroundRemoval === 'applied-ai' ? (
-            <p className="field-hint" role="status">
-              已用 AI 抠图出图。
-            </p>
-          ) : backgroundRemoval === 'fallback' ? (
-            <p className="field-hint" role="status">
-              AI 抠图没能给出可信的主体，已按「不去背景」出图。
-            </p>
-          ) : (
-            <p className="field-hint">首次使用需联网下载模型（约 44MB，之后离线可用）。</p>
-          )
+          <>
+            <div className="field-row">
+              <span className="field-label-inline">抠图模型</span>
+              <select
+                value={settings.aiModel}
+                onChange={(event) => onPatch({ aiModel: event.target.value })}
+              >
+                {AI_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {aiProgress ? (
+              <p className="field-hint" role="status">
+                AI 正在抠图…（图片已发送到服务器计算）
+              </p>
+            ) : backgroundRemoval === 'applied-ai' ? (
+              <p className="field-hint" role="status">
+                已用 AI 抠图出图。
+              </p>
+            ) : backgroundRemoval === 'fallback' ? (
+              <p className="field-hint" role="status">
+                AI 抠图没能给出可信的主体，已按「不去背景」出图。
+              </p>
+            ) : (
+              <p className="field-hint">
+                会用你的图片在本站服务器上算一次抠图（约 2~4 秒），**服务端不保存图片**；不需要下载任何模型。
+              </p>
+            )}
+          </>
         ) : null}
         <div className="field-row">
           <label className="switch-field">
@@ -367,3 +381,4 @@ export function ParamPanel({ settings, palettes, onPatch, backgroundRemoval, aiP
     </div>
   );
 }
+
